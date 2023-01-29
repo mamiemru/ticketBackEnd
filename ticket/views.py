@@ -75,6 +75,12 @@ class FeuilleViewSet(viewsets.ModelViewSet):
         datas = FeuilleSerializer(feuille)
         return Response(datas.data)
     
+    def list(self, request, format=None):
+        feuille = Feuille.objects.all().values('date', 'id')
+        print(feuille)
+        datas = FeuilleSerializer(feuille, many=True)
+        return Response(datas.data)
+    
 class FeuilleTableViewSet(APIView):
     
     def get(self, request, pk, format=None):
@@ -94,10 +100,8 @@ class FeuilleSummaryViewSet(APIView):
 class CompletionChangedViewSet(APIView):
     
     def get(self, request, format=None):
-        tdc_shops = TicketDeCaisseShopEnum.objects.all()
-        tdc_categories = TicketDeCaisseTypeEnum.objects.all()
-        datas = { 'shop': tdc_shops, 'category': tdc_categories }
-        return JsonResponse(datas)
+        datas = CompletionChangedSerilizer()
+        return Response(datas.data)
     
 class CompletionChangedShopViewSet(APIView):
     
@@ -140,6 +144,7 @@ class CompletionChangedArticleItemIdentViewSet(APIView):
         if not article:
             return Response(data=None, status=status.HTTP_404_NOT_FOUND)
             
+        article.item.attachement = AttachementImageArticle.objects.filter(name=ident).first()
         datas = ItemArticleSerializer(article.item)
         return Response(data=datas.data)
     
@@ -182,10 +187,6 @@ class Attachements(viewsets.ModelViewSet):
     serializer_class = AttachementsImagesSerializer
     queryset = AttachementsImages.objects.all()
     
-    def __image_name(category, filename):
-        f = re.sub(r'[^a-z0-9]', '_', filename.lower())
-        return f'{category}-{f}'
-    
     def retrieve(self, request, category, filename, format=None):
         img = AttachementsImages.objects.filter(name=filename, category=category).first()
         
@@ -197,13 +198,49 @@ class Attachements(viewsets.ModelViewSet):
     
     def create(self, request, format=None):
         image = request.data.get('image', None)
-        name = request.data.get('name', None)
         category = request.data.get('category', None)
         
-        if image is None or name is None or category is None:
+        if image is None or category is None:
             return Response(data=None, status=status.HTTP_400_BAD_REQUEST)
         
+        if category == 'article':
+            img = AttachementImageArticle.objects.create(image=image, name=image.name, category='article')
+            datas = AttachementImageArticleSerializer(img)
+            return Response(data=datas.data, status=status.HTTP_201_CREATED)
+        elif category == 'ticket':
+            img = AttachementImageTicket.objects.create(image=image, name=image.name, category='ticket')
+            datas = AttachementImageTicketSerializer(img)
+            return Response(data=datas.data, status=status.HTTP_201_CREATED)
+
+        return Response(data=None, status=status.HTTP_400_BAD_REQUEST)
+
+class TicketML(viewsets.ModelViewSet):
+    parser_classes = [MultiPartParser, FormParser]
+    serializer_class = AttachementsImagesSerializer
+    
+    def create(self, request, format=None):
+        image = request.data.get('image', None)
+        category = request.data.get('category', None)
         
-        img = AttachementsImages.objects.create(image=image, name=name, category=category)
-        datas = AttachementsImagesSerializer(img)
-        return Response(data=datas.data, status=status.HTTP_200_OK)
+        if image is None or category is None:
+            return Response(data=None, status=status.HTTP_400_BAD_REQUEST)
+        
+        if category == 'ticket':
+            minioModel = AttachementImageTicket(name=image.name, image=image)
+            minioModel.save()
+            serializerMinioModel = AttachementImageTicketSerializer(minioModel)
+        else:
+            minioModel = AttachementImageArticle(name=image.name, image=image)
+            minioModel.save()
+            serializerMinioModel = AttachementImageArticleSerializer(minioModel)
+        
+        import requests
+        datas = requests.post(
+            f"http://localhost:8001/to_ticket_de_caisse/{serializerMinioModel.data['id']}/",
+            headers={ 'Content-Type': 'application/json' }
+        )
+        
+        if datas.status_code == status.HTTP_200_OK:
+            return Response(data=datas.json(), status=status.HTTP_201_CREATED)
+        
+        return Response(data=None, status=status.HTTP_400_BAD_REQUEST)

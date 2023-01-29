@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
 import os
+from datetime import timedelta
+from typing import List, Tuple
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -40,6 +42,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'ticket',
     'rest_framework',
+    'corsheaders',
+    'django_minio_backend',  # https://github.com/theriverman/django-minio-backend
 ]
 
 MIDDLEWARE = [
@@ -50,6 +54,12 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
+]
+
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:8080',
 ]
 
 REST_FRAMEWORK = {
@@ -58,9 +68,9 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny'
     ],
-    'DEFAULT_PARSER_CLASSES': (
+    'DEFAULT_PARSER_CLASSES': [
         'rest_framework.parsers.FileUploadParser'
-    )
+    ],
 }
 
 ROOT_URLCONF = 'ticketBackEnd.urls'
@@ -144,3 +154,23 @@ STATICFILES_DIRS = (
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+## Minio
+MINIO_ENDPOINT = '127.0.0.1:9000'
+MINIO_EXTERNAL_ENDPOINT = "192.168.1.56:9000"  # Default is same as MINIO_ENDPOINT
+MINIO_USE_HTTPS = False
+MINIO_EXTERNAL_ENDPOINT_USE_HTTPS = False  # Default is same as MINIO_USE_HTTPS
+MINIO_ACCESS_KEY = 'minioadmin'
+MINIO_SECRET_KEY = 'minioadmin'
+MINIO_URL_EXPIRY_HOURS = timedelta(days=1)  # Default is 7 days (longest) if not defined
+MINIO_CONSISTENCY_CHECK_ON_START = True
+MINIO_PRIVATE_BUCKETS = [
+    'ticket',
+]
+MINIO_PUBLIC_BUCKETS = [
+    'article', 'icon',
+]
+MINIO_POLICY_HOOKS: List[Tuple[str, dict]] = []
+# MINIO_MEDIA_FILES_BUCKET = 'my-media-files-bucket'  # replacement for MEDIA_ROOT
+# MINIO_STATIC_FILES_BUCKET = 'my-static-files-bucket'  # replacement for STATIC_ROOT
+MINIO_BUCKET_CHECK_ON_SAVE = True  # Default: True // Creates bucket if missing, then save

@@ -50,5 +50,6 @@ urlpatterns = [
     path('completion/changed/<str:shop>/', CompletionChangedShopViewSet.as_view()),
     path('completion/changed/<str:shop>/article/item/<str:ident>/', CompletionChangedArticleItemIdentViewSet.as_view()),
     path('attachements/<str:category>/<str:filename>/', Attachements.as_view({ 'get': 'retrieve' })),
-    path('attachements/', Attachements.as_view({ 'post': 'create' }))
+    path('attachements/', Attachements.as_view({ 'post': 'create' })),
+    path('detection/', TicketML.as_view({ 'post': 'create' })),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

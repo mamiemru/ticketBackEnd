@@ -27,10 +27,21 @@ class ItemArticleGroupEnumSerializer(serializers.ModelSerializer):
     class Meta:
         model = ItemArticleGroupEnum
         fields = '__all__'
-            
+        
+class AttachementImageTicketSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AttachementImageTicket
+        fields = '__all__'
+        
+class AttachementImageArticleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AttachementImageArticle
+        fields = '__all__'
+         
 class ItemArticleSerializer(serializers.ModelSerializer):
     category = ItemArticleCategoryEnumSerializer(read_only=True)
     group = ItemArticleGroupEnumSerializer(read_only=True)
+    attachement = AttachementImageArticleSerializer(read_only=True)
     class Meta:
         model = ItemArticle
         fields = '__all__'
@@ -40,7 +51,7 @@ class ArticleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Article
         fields = '__all__'
-        
+
 class TicketDeCaisseSerializer(serializers.ModelSerializer):
     
     shop = TicketDeCaisseShopEnumSerializer(read_only=True)
@@ -48,16 +59,18 @@ class TicketDeCaisseSerializer(serializers.ModelSerializer):
     category = TicketDeCaisseTypeEnumSerializer(read_only=True)
     articles = ArticleSerializer(read_only=True, many=True)
     total = serializers.ReadOnlyField()
+    attachement = AttachementImageTicketSerializer(read_only=True)
     
     class Meta:
         model = TicketDeCaisse
-        fields = ('id', 'shop', 'localisation', 'date', 'category', 'articles', 'total')
+        fields = ('id', 'shop', 'localisation', 'date', 'category', 'articles', 'total', 'attachement')
                                 
 class FeuilleSerializer(serializers.ModelSerializer):
     year = serializers.ReadOnlyField()
     month = serializers.ReadOnlyField()
     factures_json = serializers.ReadOnlyField()
     tickets = serializers.ReadOnlyField()
+    
     class Meta:
         model = Feuille
         fields = ('id', 'date', 'year', 'month', 'factures_json', 'tickets')
@@ -94,4 +107,29 @@ class AttachementsImagesSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = AttachementsImages
+        fields = '__all__'        
+        
+class AttachementImageTicketSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = AttachementImageTicket
+        fields = '__all__'       
+         
+class AttachementImageArticleSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = AttachementImageArticle
         fields = '__all__'
+        
+class CompletionChangedSerilizer(serializers.Serializer):
+    shops: serializers.SerializerMethodField()
+    categories: serializers.SerializerMethodField()
+    
+    class Meta:
+        fields = '__all__'
+        
+    def get_shops(self, obj):
+        return TicketDeCaisseShopEnumSerializer(TicketDeCaisseShopEnum.objects.all(), many=True)
+    
+    def get_categories(self, obj):
+        return TicketDeCaisseTypeEnumSerializer(TicketDeCaisseTypeEnum.objects.all(), many=True)
