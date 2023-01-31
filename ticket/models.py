@@ -86,7 +86,7 @@ class ItemArticle(Model):
     attachement = ForeignKey(AttachementImageArticle, to_field='id', null=True, on_delete=SET_NULL)
     
     def __str__(self):
-        return f"ItemArticle(ident={self.ident}, prix={self.prix}, name={self.name}, category={self.category}, group={self.group})"
+        return f"ItemArticle(id={self.id}, ident={self.ident}, prix={self.prix}, name={self.name}, category={self.category}, group={self.group})"
         
 class TicketDeCaisse(Model):
     shop = ForeignKey(TicketDeCaisseShopEnum, on_delete=SET_NULL, null=True)

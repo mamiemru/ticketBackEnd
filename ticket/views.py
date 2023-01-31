@@ -6,8 +6,10 @@ import mimetypes
 from calendar import monthrange
 
 from django.db.models import Q
+from django.db import transaction
 from django.http import JsonResponse
 from django.http import HttpResponse
+
 from wsgiref.util import FileWrapper
 
 from rest_framework import status
@@ -15,8 +17,9 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.parsers import FileUploadParser
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
+from ticket.service.dateService import DateService
 from ticket.service.feuillesService import FeuillesService
 
 from .models import *
@@ -61,6 +64,64 @@ class TicketDeCaisseViewSet(viewsets.ModelViewSet):
         results = TicketDeCaisse.objects.all().order_by('-id')[:last_n]
         datas = TicketDeCaisseSerializer(results, many=True)
         return Response(datas.data)  
+
+class TicketDeCaisseViewSetCustomParser(viewsets.ModelViewSet):
+    parser_classes = [JSONParser]
+    serializer_class = TicketDeCaisseSerializer
+    queryset = TicketDeCaisse.objects.all()
+    
+    def create(self, request, format=None):
+        
+        tdcId = None
+        try:
+            with transaction.atomic():
+                tdc_date = DateService.dateStrToDateEnglishDateFormat(request.data['date'])
+                print(tdc_date)
+                tdc_shop = TicketDeCaisseShopEnum.objects.get_or_create(**request.data['shop'])[0]
+                print(tdc_shop)
+                tdc_category = TicketDeCaisseTypeEnum.objects.get_or_create(**request.data['category'])[0]
+                print(tdc_category)
+                tdc_localisation = TicketDeCaisseLocalisationEnum.objects.get_or_create(**request.data['localisation'])[0]
+                print(tdc_localisation)
+                
+                if request.data['attachement']:
+                    tdc_attachement = AttachementImageTicket.objects.filter(id=request.data['attachement']['id']).first()
+                else:
+                    tdc_attachement = None
+                print(tdc_attachement)
+                
+                tdc = TicketDeCaisse.objects.get_or_create(shop=tdc_shop, localisation=tdc_localisation, category=tdc_category, date=tdc_date, attachement=tdc_attachement)
+                if not tdc[1]:
+                    raise Exception("Ticket de caisse already exists")
+                tdcId = tdc[0].id
+                print(tdc, tdcId)
+                
+                for article in request.data['articles']:
+                    if not article['item'] or not article['item']['category']:
+                        raise Exception("one field is empty")
+                    
+                    required = article['item']['category'].get('required', False)
+                    category = ItemArticleCategoryEnum.objects.get_or_create(name=article['item']['category']['name'], required=required)[0]
+                    print(category)
+                    group =  ItemArticleGroupEnum.objects.get_or_create(name=article['item']['group']['name'])[0] if article['item']['group'] else None
+                    print(group)
+                    attachement = AttachementImageArticle.objects.filter(id=article['item']['attachement']['id']).first() if article['item']['attachement'] else None
+                    print(attachement)
+                    item = ItemArticle.objects.get_or_create(
+                        name=article['item']['name'], ident=article['item']['ident'], prix=article['item']['prix'], category=category, group=group, attachement=attachement
+                    )
+                    print(item)
+                    
+                    tdc_article = Article( tdc=tdc[0], remise=article['remise'], quantity=article['quantity'], item=item[0] )
+                    tdc_article.save()
+                    print(tdc_article)
+        except Exception as e:
+            return Response(data={'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+               
+        new_tdc = TicketDeCaisse.objects.get(id=tdcId)
+        new_tdc.articles = Article.objects.filter(tdc=new_tdc)
+        datas = TicketDeCaisseSerializer(new_tdc)
+        return Response(data=datas.data, status=status.HTTP_201_CREATED)
     
 class ArticleViewSet(viewsets.ModelViewSet):
     serializer_class = ArticleSerializer

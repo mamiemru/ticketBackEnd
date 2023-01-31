@@ -85,3 +85,7 @@ class DateService:
     @staticmethod
     def DateToDateStr(date : datetime, strft="%d/%m/%Y %H:%M:%S"):
         return date.strftime(strft)
+    
+    @staticmethod
+    def dateStrToDateEnglishDateFormat(dateStr="01/07/2022 09:00:00") -> str:
+        return DateService.DateToDateStr(DateService.dateToDateObject(dateStr), strft="%Y-%m-%dT%H:%M:%S")
