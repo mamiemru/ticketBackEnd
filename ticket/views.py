@@ -137,8 +137,8 @@ class FeuilleViewSet(viewsets.ModelViewSet):
         return Response(datas.data)
     
     def list(self, request, format=None):
+        FeuillesService.check_new_month()
         feuille = Feuille.objects.all().values('date', 'id')
-        print(feuille)
         datas = FeuilleSerializer(feuille, many=True)
         return Response(datas.data)
     

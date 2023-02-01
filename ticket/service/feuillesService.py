@@ -1,20 +1,34 @@
 
 
+import json
 import datetime
-from dateutil.relativedelta import relativedelta
 
 from typing import Dict
+from pathlib import Path
+from dateutil.relativedelta import relativedelta
 
 from ticket.models import Feuille
 from ticket.models import TicketDeCaisse
 from ticket.models import TicketDeCaisseTypeEnum
-
 from ticket.service.dateService import DateService
-
 from ticket.structs import TableFeuille
+
+from django.conf import settings
 
 class FeuillesService():
     
+    @staticmethod
+    def check_new_month():
+        currentMonthDate = DateService.currentMonthDate()
+        currentMonthTimestamp = DateService.dateToMonthTimestamp(currentMonthDate)
+
+        print(currentMonthTimestamp)
+        if not Feuille.objects.filter(date=currentMonthTimestamp).first():
+            with open(Path(settings.BASE_DIR) / 'ticket' / 'service' / 'empty.json', 'r') as file:
+                f = json.loads(file.read())
+                factures = json.dumps(f['factures']).replace("'", '"')
+                Feuille(date=currentMonthTimestamp, factures=factures).save()
+            
     @staticmethod
     def retrieve(pk) -> Feuille:
         feuille = Feuille.objects.get(id=pk)
@@ -40,16 +54,18 @@ class FeuillesService():
     @staticmethod
     def feuilleToDataTable(feuille : Feuille) -> TableFeuille:
         l : TableFeuille = TableFeuille.empty()
+        factures = feuille.factures_json()
         
-        for name, price in feuille.factures_json().items():
-            l.add(category="Factures", name=name, price=price, date=None, required=True)
-            
-        for ticketId in feuille.tickets:
-            tdc = TicketDeCaisse.objects.filter(id=ticketId).first()
-            if tdc:
-                price = tdc.total()
-                required = tdc.category.required
-                l.add(category=tdc.category.name, name=tdc.shop.name, price=price, date=tdc.date, required=required)
+        if factures:
+            for name, price in factures.items():
+                l.add(category="Factures", name=name, price=price, date=None, required=True)
+                
+            for ticketId in feuille.tickets:
+                tdc = TicketDeCaisse.objects.filter(id=ticketId).first()
+                if tdc:
+                    price = tdc.total()
+                    required = tdc.category.required
+                    l.add(category=tdc.category.name, name=tdc.shop.name, price=price, date=tdc.date, required=required)
 
         return l
 
