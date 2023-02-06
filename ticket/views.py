@@ -131,6 +131,20 @@ class ArticleViewSet(viewsets.ModelViewSet):
     serializer_class = ArticleSerializer
     queryset = Article.objects.all()
     
+    def list(self, request, format=None):
+        article_item_ident = request.GET.get('ident', None)
+        
+        if article_item_ident is None:
+            return Response(data={"error": "missing or bad url param ?ident="}, status=status.HTTP_400_BAD_REQUEST)
+        
+        articles = Article.objects.filter(item__ident=article_item_ident).all()
+        
+        if not articles:
+            return Response(data=None, status=status.HTTP_404_NOT_FOUND)
+        
+        datas = ArticleSerializer(articles, many=True)
+        return Response(datas.data, status=status.HTTP_200_OK)
+    
 class FeuilleViewSet(viewsets.ModelViewSet):
     serializer_class = FeuilleSerializer
     queryset = Feuille.objects.all()

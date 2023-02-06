@@ -45,9 +45,19 @@ class ItemArticleSerializer(serializers.ModelSerializer):
     class Meta:
         model = ItemArticle
         fields = '__all__'
-                
+        
+class TicketDeCaisseHeaderSerializer(serializers.ModelSerializer):
+    shop = TicketDeCaisseShopEnumSerializer(read_only=True)
+    localisation = TicketDeCaisseLocalisationEnumSerializer(read_only=True)
+    category = TicketDeCaisseTypeEnumSerializer(read_only=True)
+    
+    class Meta:
+        model = TicketDeCaisse
+        fields = ('id', 'shop', 'localisation', 'date', 'category')
+               
 class ArticleSerializer(serializers.ModelSerializer):
     item = ItemArticleSerializer(read_only=True)
+    tdc = TicketDeCaisseHeaderSerializer(read_only=True)
     class Meta:
         model = Article
         fields = '__all__'
@@ -64,6 +74,8 @@ class TicketDeCaisseSerializer(serializers.ModelSerializer):
     class Meta:
         model = TicketDeCaisse
         fields = ('id', 'shop', 'localisation', 'date', 'category', 'articles', 'total', 'attachement')
+        
+
                                 
 class FeuilleSerializer(serializers.ModelSerializer):
     year = serializers.ReadOnlyField()
