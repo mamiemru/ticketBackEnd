@@ -57,7 +57,7 @@ def image_path(instance, filename):
     
 class AttachementsImages(Model): 
     name = TextField(max_length=50, null=False)
-    category = CharField(null=False, choices = ( ('ticket', 'Ticket'), ('article', 'Article'), ('icon', 'Icon')), max_length=10)
+    category = CharField(null=False, choices = (('ticket', 'Ticket'), ('article', 'Article'), ('icon', 'Icon')), max_length=10)
     image = ImageField(upload_to=image_path, null=False)
     
     def __str__(self):
@@ -73,20 +73,20 @@ class AttachementImageArticle(Model):
 class AttachementImageTicket(Model):
     name = TextField(max_length=50, null=False)
     category = CharField(default='ticket', null=False, editable=False, max_length=6)
+    type = CharField(null=False, choices = (('ticket', 'Ticket'), ('recepiece', 'Receipiece'), ('facture', 'Facture')), max_length=10)
     image = ImageField(upload_to=iso_date_prefix, null=False, storage=MinioBackend(bucket_name='ticket'))
     def __str__(self):
-        return f"AttachementImageTicket(category={self.category}, name={self.name}, img={self.image})"
+        return f"AttachementImageTicket(category={self.category}, type={self.name}, name={self.name}, img={self.image})"
     
 class ItemArticle(Model):
     ident = TextField(null=False)
-    prix = FloatField(null=False)
     name = TextField(null=False)
     category = ForeignKey(ItemArticleCategoryEnum, to_field='id', null=True, on_delete=SET_NULL)
     group = ForeignKey(ItemArticleGroupEnum, to_field='id', null=True, default=None, on_delete=SET_NULL)
     attachement = ForeignKey(AttachementImageArticle, to_field='id', null=True, on_delete=SET_NULL)
     
     def __str__(self):
-        return f"ItemArticle(id={self.id}, ident={self.ident}, prix={self.prix}, name={self.name}, category={self.category}, group={self.group})"
+        return f"ItemArticle(id={self.id}, ident={self.ident}, name={self.name}, category={self.category}, group={self.group})"
         
 class TicketDeCaisse(Model):
     shop = ForeignKey(TicketDeCaisseShopEnum, on_delete=SET_NULL, null=True)
@@ -99,19 +99,20 @@ class TicketDeCaisse(Model):
         return f"TicketDeCaisse(shop={self.shop}, localisation={self.localisation}, date={self.date}, category={self.category}, attachement={self.attachement})"
     
     def total(self):
-        return sum([article.item.prix for article in Article.objects.filter(tdc=self.id)])
+        return sum([article.price for article in Article.objects.filter(tdc=self.id)])
     
     def sum_total(self, articles : List):
-        return sum([article.item.prix for article in articles])
+        return sum([article.price for article in articles])
     
 class Article(Model):
     item = ForeignKey(ItemArticle, to_field='id', on_delete=CASCADE)
+    price = FloatField(null=False)
     remise = FloatField(null=False, default=0.0)
     quantity = IntegerField(null=False, default=1)
     tdc = ForeignKey(TicketDeCaisse, on_delete=CASCADE)
     
     def __str__(self):
-        return f"Article(remise={self.remise}, quantity={self.quantity}, tdc={self.tdc}, item={self.item})"
+        return f"Article(remise={self.remise}, quantity={self.quantity}, price={self.price}, tdc={self.tdc}, item={self.item})"
     
 class Feuille(Model):
     date = IntegerField(null=False)

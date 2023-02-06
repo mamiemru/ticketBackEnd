@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'django_minio_backend',  # https://github.com/theriverman/django-minio-backend
+    'dbbackup',  # django-dbbackup
 ]
 
 MIDDLEWARE = [
@@ -71,6 +72,8 @@ REST_FRAMEWORK = {
     'DEFAULT_PARSER_CLASSES': [
         'rest_framework.parsers.FileUploadParser'
     ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'PAGE_SIZE': None
 }
 
 ROOT_URLCONF = 'ticketBackEnd.urls'
@@ -174,3 +177,6 @@ MINIO_POLICY_HOOKS: List[Tuple[str, dict]] = []
 # MINIO_MEDIA_FILES_BUCKET = 'my-media-files-bucket'  # replacement for MEDIA_ROOT
 # MINIO_STATIC_FILES_BUCKET = 'my-static-files-bucket'  # replacement for STATIC_ROOT
 MINIO_BUCKET_CHECK_ON_SAVE = True  # Default: True // Creates bucket if missing, then save
+
+DBBACKUP_STORAGE = 'django.core.files.storage.FileSystemStorage'
+DBBACKUP_STORAGE_OPTIONS = {'location': 'dbbackups'}

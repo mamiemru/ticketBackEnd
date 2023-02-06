@@ -34,7 +34,7 @@ urlpatterns = [
     path('ticket_de_caisse/localisation/<str:pk>/', TicketDeCaisseLocalisationEnumViewSet.as_view({'get': 'retrieve', 'delete': 'destroy', 'put': 'update'})),
     path('ticket_de_caisse/article/item/group/', ItemArticleGroupEnumViewSet.as_view({'get': 'list', 'post': 'create'})),
     path('ticket_de_caisse/article/item/group/<str:pk>/', ItemArticleGroupEnumViewSet.as_view({'get': 'retrieve', 'delete': 'destroy', 'put': 'update'})),
-    path('ticket_de_caisse/article/item/', ItemArticleViewSet.as_view({'get': 'list', 'post': 'create'})),
+    path('ticket_de_caisse/article/item/', ItemArticleViewSet.as_view({'get': 'list'})),
     path('ticket_de_caisse/article/item/<str:pk>/', ItemArticleViewSet.as_view({'get': 'retrieve', 'delete': 'destroy', 'put': 'update'})),
     path('ticket_de_caisse/last_n/<int:last_n>/', TicketDeCaisseViewSet.as_view({'get': 'list'})),
     path('ticket_de_caisse/article/', ArticleViewSet.as_view({'get': 'list', 'post': 'create'})),

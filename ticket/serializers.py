@@ -133,3 +133,22 @@ class CompletionChangedSerilizer(serializers.Serializer):
     
     def get_categories(self, obj):
         return TicketDeCaisseTypeEnumSerializer(TicketDeCaisseTypeEnum.objects.all(), many=True)
+    
+class PaginationSerilizer(serializers.Serializer):
+    elements_per_page = serializers.IntegerField(),
+    page = serializers.IntegerField(),
+    total_pages = serializers.IntegerField(),
+    has_next_page = serializers.BooleanField(default=False),
+    has_previous_page = serializers.BooleanField(default=False)
+    
+    class Meta:
+        fields = '__all__'
+        
+class ItemArticlePaginationSerilizer(PaginationSerilizer):
+    itemarticles = ItemArticleSerializer(read_only=True, many=True)
+    
+    class Meta:
+        fields = '__all__'
+        
+    def get_itemarticles(self, obj):
+        return ItemArticleSerializer(ItemArticle.objects.all()[elements_per_page*page:elements_per_page*(page+1)], many=True)

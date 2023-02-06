@@ -14,13 +14,16 @@ from wsgiref.util import FileWrapper
 
 from rest_framework import status
 from rest_framework import viewsets
-from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.mixins import ListModelMixin
 from rest_framework.parsers import FileUploadParser
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 from ticket.service.dateService import DateService
 from ticket.service.feuillesService import FeuillesService
+
+from ticket.pagination import StandardResultsSetPagination
 
 from .models import *
 from .serializers import *
@@ -45,9 +48,10 @@ class ItemArticleGroupEnumViewSet(viewsets.ModelViewSet):
     serializer_class = ItemArticleGroupEnumSerializer
     queryset = ItemArticleGroupEnum.objects.all()
     
-class ItemArticleViewSet(viewsets.ModelViewSet):
+class ItemArticleViewSet(ListModelMixin, viewsets.GenericViewSet):
     serializer_class = ItemArticleSerializer
     queryset = ItemArticle.objects.all()
+    pagination_class = StandardResultsSetPagination
     
 class TicketDeCaisseViewSet(viewsets.ModelViewSet):
     serializer_class = TicketDeCaisseSerializer
@@ -108,11 +112,11 @@ class TicketDeCaisseViewSetCustomParser(viewsets.ModelViewSet):
                     attachement = AttachementImageArticle.objects.filter(id=article['item']['attachement']['id']).first() if article['item']['attachement'] else None
                     print(attachement)
                     item = ItemArticle.objects.get_or_create(
-                        name=article['item']['name'], ident=article['item']['ident'], prix=article['item']['prix'], category=category, group=group, attachement=attachement
+                        name=article['item']['name'], ident=article['item']['ident'], category=category, group=group, attachement=attachement
                     )
                     print(item)
                     
-                    tdc_article = Article( tdc=tdc[0], remise=article['remise'], quantity=article['quantity'], item=item[0] )
+                    tdc_article = Article( tdc=tdc[0], remise=article['remise'], quantity=article['quantity'], price=article['price'], item=item[0] )
                     tdc_article.save()
                     print(tdc_article)
         except Exception as e:
@@ -206,7 +210,7 @@ class CompletionChangedArticleItemIdentViewSet(APIView):
             return Response(data=None, status=status.HTTP_404_NOT_FOUND)
             
         article.item.attachement = AttachementImageArticle.objects.filter(name=ident).first()
-        datas = ItemArticleSerializer(article.item)
+        datas = ArticleSerializer(article)
         return Response(data=datas.data)
     
 class PlotMonthGraph(APIView):
@@ -281,13 +285,18 @@ class TicketML(viewsets.ModelViewSet):
     
     def create(self, request, format=None):
         image = request.data.get('image', None)
+        typ = request.data.get('type', None)
         category = request.data.get('category', None)
         
         if image is None or category is None:
             return Response(data=None, status=status.HTTP_400_BAD_REQUEST)
         
         if category == 'ticket':
-            minioModel = AttachementImageTicket(name=image.name, image=image)
+            
+            if typ is None:
+                return Response(data=None, status=status.HTTP_400_BAD_REQUEST)
+            
+            minioModel = AttachementImageTicket(name=image.name, type=typ, image=image)
             minioModel.save()
             serializerMinioModel = AttachementImageTicketSerializer(minioModel)
         else:
@@ -300,6 +309,8 @@ class TicketML(viewsets.ModelViewSet):
             f"http://localhost:8001/to_ticket_de_caisse/{serializerMinioModel.data['id']}/",
             headers={ 'Content-Type': 'application/json' }
         )
+        
+        ## update image name in Model and in Minio (use date & user)
         
         if datas.status_code == status.HTTP_200_OK:
             return Response(data=datas.json(), status=status.HTTP_201_CREATED)
