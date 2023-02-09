@@ -16,7 +16,7 @@ from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.mixins import ListModelMixin
+from rest_framework.mixins import ListModelMixin, RetrieveModelMixin, UpdateModelMixin
 from rest_framework.parsers import FileUploadParser
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
@@ -48,10 +48,40 @@ class ItemArticleGroupEnumViewSet(viewsets.ModelViewSet):
     serializer_class = ItemArticleGroupEnumSerializer
     queryset = ItemArticleGroupEnum.objects.all()
     
-class ItemArticleViewSet(ListModelMixin, viewsets.GenericViewSet):
+class ItemArticleViewSet(ListModelMixin, RetrieveModelMixin, UpdateModelMixin, viewsets.GenericViewSet):
+    parser_classes = [JSONParser]
     serializer_class = ItemArticleSerializer
     queryset = ItemArticle.objects.all()
     pagination_class = StandardResultsSetPagination
+    
+    def update(self, request, pk, format=None):
+        itemarticle = request.data
+        required = itemarticle['category'].get('required', False)
+        category = ItemArticleCategoryEnum.objects.get_or_create(name=itemarticle['category']['name'], required=required)[0]
+        group =  ItemArticleGroupEnum.objects.get_or_create(name=itemarticle['group']['name'])[0] if itemarticle['group'] else None
+        attachement = AttachementImageArticle.objects.filter(id=itemarticle['attachement']['id']).first() if itemarticle['attachement'] else None
+        item_ = ItemArticle.objects.get_or_create(
+            name=itemarticle['name'], ident=itemarticle['ident'], category=category, group=group, attachement=attachement
+        )
+        item = item_[0]
+        datas = ItemArticleSerializer(item)
+        return Response(data=datas.data, status=status.HTTP_200_OK)
+    
+class ItemArticleFilterViewSet(ListModelMixin, viewsets.GenericViewSet):
+    parser_classes = [JSONParser]
+    serializer_class = ItemArticleSerializer
+    queryset = ItemArticle.objects.all()
+    pagination_class = StandardResultsSetPagination
+    
+    def list(self, request, format=None):
+        ident = request.data.get('ident', None)
+        
+        if not ident:
+            return Response(data=None, status=status.HTTP_400_BAD_REQUEST)
+        
+        itemarticles = ItemArticle.objects.filter(ident__contains=ident).all()
+        datas = ItemArticleSerializer(itemarticles, many=True)
+        return Response(data={'results': datas.data}, status=status.HTTP_200_OK)
     
 class TicketDeCaisseViewSet(viewsets.ModelViewSet):
     serializer_class = TicketDeCaisseSerializer
