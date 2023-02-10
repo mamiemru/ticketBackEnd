@@ -60,10 +60,13 @@ class ItemArticleViewSet(ListModelMixin, RetrieveModelMixin, UpdateModelMixin, v
         category = ItemArticleCategoryEnum.objects.get_or_create(name=itemarticle['category']['name'], required=required)[0]
         group =  ItemArticleGroupEnum.objects.get_or_create(name=itemarticle['group']['name'])[0] if itemarticle['group'] else None
         attachement = AttachementImageArticle.objects.filter(id=itemarticle['attachement']['id']).first() if itemarticle['attachement'] else None
-        item_ = ItemArticle.objects.get_or_create(
-            name=itemarticle['name'], ident=itemarticle['ident'], category=category, group=group, attachement=attachement
-        )
-        item = item_[0]
+        item = ItemArticle.objects.get(id=itemarticle['id'])
+        item.name = itemarticle['name']
+        item.ident = itemarticle['ident']
+        item.category = category
+        item.group = group
+        item.attachement = attachement
+        item.save()
         datas = ItemArticleSerializer(item)
         return Response(data=datas.data, status=status.HTTP_200_OK)
     
@@ -95,7 +98,7 @@ class TicketDeCaisseViewSet(viewsets.ModelViewSet):
     
     def list(self, request, last_n, format=None):
         last_n = min(last_n, len(TicketDeCaisse.objects.all()))
-        results = TicketDeCaisse.objects.all().order_by('-id')[:last_n]
+        results = TicketDeCaisse.objects.all().order_by('-date')[:last_n]
         datas = TicketDeCaisseSerializer(results, many=True)
         return Response(datas.data)  
 
