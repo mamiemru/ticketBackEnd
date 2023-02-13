@@ -72,19 +72,42 @@ class ItemArticleViewSet(ListModelMixin, RetrieveModelMixin, UpdateModelMixin, v
     
 class ItemArticleFilterViewSet(ListModelMixin, viewsets.GenericViewSet):
     parser_classes = [JSONParser]
-    serializer_class = ItemArticleSerializer
-    queryset = ItemArticle.objects.all()
+    serializer_class = ArticleSerializer
+    queryset = Article.objects.all()
     pagination_class = StandardResultsSetPagination
     
     def list(self, request, format=None):
-        ident = request.data.get('ident', None)
         
-        if not ident:
-            return Response(data=None, status=status.HTTP_400_BAD_REQUEST)
+        print(request.data)
         
-        itemarticles = ItemArticle.objects.filter(ident__contains=ident).all()
-        datas = ItemArticleSerializer(itemarticles, many=True)
-        return Response(data={'results': datas.data}, status=status.HTTP_200_OK)
+        ident = request.data.get('item', {}).get('ident', None)
+        category = request.data.get('item', {}).get('category', {}).get('name', None)
+        group = request.data.get('item', {}).get('group', {}).get('name', None)
+        tdcshop = request.data.get('tdc', {}).get('shop', {}).get('name', None)
+        tdccategory = request.data.get('tdc', {}).get('category', {}).get('name', None)
+        
+        articles = Article.objects
+        if ident:
+            articles = articles.filter(item__ident__icontains=ident.lower())
+        if category:
+            articles = articles.filter(item__category__name__icontains=category.lower())
+        if group:
+            articles = articles.filter(item__group__name__icontains=group.lower())
+        if tdcshop:
+            articles = articles.filter(tdc__shop__name__icontains=tdcshop.lower())
+        if tdccategory:
+            articles = articles.filter(tdc__category__name__icontains=tdccategory.lower())
+            
+        itemArticles_ids = articles.values_list('item', flat=True).all()
+        itemArticles = ItemArticle.objects.filter(id__in=itemArticles_ids).all()
+        datas = ItemArticleSerializer(itemArticles, many=True)
+        
+        '''
+        pagination = StandardResultsSetPagination()
+        paginate_qs = pagination.paginate_queryset(datas.data, request)
+        return pagination.get_paginated_response(paginate_qs)
+        '''
+        return Response(data={"results": datas.data})
     
 class TicketDeCaisseViewSet(viewsets.ModelViewSet):
     serializer_class = TicketDeCaisseSerializer

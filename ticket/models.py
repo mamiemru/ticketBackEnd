@@ -1,5 +1,6 @@
 
 import json
+import math
 import datetime
 
 from typing import List
@@ -99,10 +100,10 @@ class TicketDeCaisse(Model):
         return f"TicketDeCaisse(shop={self.shop}, localisation={self.localisation}, date={self.date}, category={self.category}, attachement={self.attachement})"
     
     def total(self):
-        return sum([article.price for article in Article.objects.filter(tdc=self.id)])
+        return math.fsum([article.price for article in Article.objects.filter(tdc=self.id)])
     
     def sum_total(self, articles : List):
-        return sum([article.price for article in articles])
+        return math.fsum([article.price for article in articles])
     
 class Article(Model):
     item = ForeignKey(ItemArticle, to_field='id', on_delete=CASCADE)

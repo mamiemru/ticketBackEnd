@@ -39,44 +39,42 @@ class AttachementImageArticleSerializer(serializers.ModelSerializer):
         fields = '__all__'
          
 class ItemArticleSerializer(serializers.ModelSerializer):
-    category = ItemArticleCategoryEnumSerializer(read_only=True)
-    group = ItemArticleGroupEnumSerializer(read_only=True)
+    category = ItemArticleCategoryEnumSerializer()
+    group = ItemArticleGroupEnumSerializer()
     attachement = AttachementImageArticleSerializer(read_only=True)
     class Meta:
         model = ItemArticle
         fields = '__all__'
         
 class TicketDeCaisseHeaderSerializer(serializers.ModelSerializer):
-    shop = TicketDeCaisseShopEnumSerializer(read_only=True)
-    localisation = TicketDeCaisseLocalisationEnumSerializer(read_only=True)
-    category = TicketDeCaisseTypeEnumSerializer(read_only=True)
+    shop = TicketDeCaisseShopEnumSerializer()
+    localisation = TicketDeCaisseLocalisationEnumSerializer()
+    category = TicketDeCaisseTypeEnumSerializer()
     
     class Meta:
         model = TicketDeCaisse
         fields = ('id', 'shop', 'localisation', 'date', 'category')
                
 class ArticleSerializer(serializers.ModelSerializer):
-    item = ItemArticleSerializer(read_only=True)
-    tdc = TicketDeCaisseHeaderSerializer(read_only=True)
+    item = ItemArticleSerializer()
+    tdc = TicketDeCaisseHeaderSerializer()
     class Meta:
         model = Article
         fields = '__all__'
 
 class TicketDeCaisseSerializer(serializers.ModelSerializer):
     
-    shop = TicketDeCaisseShopEnumSerializer(read_only=True)
-    localisation = TicketDeCaisseLocalisationEnumSerializer(read_only=True)
-    category = TicketDeCaisseTypeEnumSerializer(read_only=True)
-    articles = ArticleSerializer(read_only=True, many=True)
+    shop = TicketDeCaisseShopEnumSerializer()
+    localisation = TicketDeCaisseLocalisationEnumSerializer()
+    category = TicketDeCaisseTypeEnumSerializer()
+    articles = ArticleSerializer(many=True)
     total = serializers.ReadOnlyField()
-    attachement = AttachementImageTicketSerializer(read_only=True)
+    attachement = AttachementImageTicketSerializer()
     
     class Meta:
         model = TicketDeCaisse
         fields = ('id', 'shop', 'localisation', 'date', 'category', 'articles', 'total', 'attachement')
-        
 
-                                
 class FeuilleSerializer(serializers.ModelSerializer):
     year = serializers.ReadOnlyField()
     month = serializers.ReadOnlyField()
@@ -96,21 +94,6 @@ class FeuilleSummarySerializer(serializers.Serializer):
     ttconfort = serializers.ReadOnlyField()
     dep = serializers.ReadOnlyField()
     mj = serializers.ReadOnlyField()
-    
-    class Meta:
-        fields = '__all__'
-        
-class DatabaseRowSerializer(serializers.Serializer):
-    shop = serializers.ListField(required=False)
-    localisation = serializers.ListField(required=False)
-    category = serializers.ListField(required=False)
-    item_article_category = serializers.ListField(required=False)
-    item_article = serializers.ListField(required=False)
-    item_article_ident = serializers.ListField(required=False)
-    price = serializers.ListField(required=False)
-    group = serializers.ListField(required=False)
-    articleQuant = serializers.ReadOnlyField(required=False)
-    articleRemise = serializers.ReadOnlyField(required=False)
     
     class Meta:
         fields = '__all__'
@@ -146,21 +129,3 @@ class CompletionChangedSerilizer(serializers.Serializer):
     def get_categories(self, obj):
         return TicketDeCaisseTypeEnumSerializer(TicketDeCaisseTypeEnum.objects.all(), many=True)
     
-class PaginationSerilizer(serializers.Serializer):
-    elements_per_page = serializers.IntegerField(),
-    page = serializers.IntegerField(),
-    total_pages = serializers.IntegerField(),
-    has_next_page = serializers.BooleanField(default=False),
-    has_previous_page = serializers.BooleanField(default=False)
-    
-    class Meta:
-        fields = '__all__'
-        
-class ItemArticlePaginationSerilizer(PaginationSerilizer):
-    itemarticles = ItemArticleSerializer(read_only=True, many=True)
-    
-    class Meta:
-        fields = '__all__'
-        
-    def get_itemarticles(self, obj):
-        return ItemArticleSerializer(ItemArticle.objects.all()[elements_per_page*page:elements_per_page*(page+1)], many=True)
