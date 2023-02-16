@@ -4,6 +4,7 @@
 # -*- coding: utf-8 -*-
 
 import json
+import dataclasses
 
 from typing import List
 from typing import Dict
@@ -121,3 +122,26 @@ class TableFeuille:
 
     def to_json(self):
         return {x:y.to_json() for x,y in self.items.items()}
+    
+    
+@dataclass
+class ApexChartSerie:
+    name: str
+    type: str
+    data: List[any]
+
+class ApexChart:
+    
+    @staticmethod
+    def to_type_column(x, series: List[ApexChartSerie], title_text):
+        return {
+            'series': map(dataclasses.asdict, series),
+            'chartOptions': {
+                'chart': { 'height': 300, 'type': 'line', 'zoom': { 'enabled': False } },
+                'dataLabels': { 'enabled': False },
+                'stroke': { 'curve': 'straight' },
+                'title': { 'text': title_text, 'align': 'left' },
+                'grid': { 'row': { 'colors': ['#f3f3f3', 'transparent'],  'opacity': 0.5 },},
+                'xaxis': { 'categories': x, 'title': { 'text': '' } }
+            }
+        }

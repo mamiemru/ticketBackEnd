@@ -26,6 +26,7 @@ from ticket.service.feuillesService import FeuillesService
 from ticket.pagination import StandardResultsSetPagination
 
 from .models import *
+from .structs import ApexChart, ApexChartSerie
 from .serializers import *
 
 class TicketDeCaisseTypeEnumViewSet(viewsets.ModelViewSet):
@@ -283,9 +284,9 @@ class CompletionChangedArticleItemIdentViewSet(APIView):
         datas = ArticleSerializer(article)
         return Response(data=datas.data)
     
-class PlotMonthGraph(APIView):
+class PlotMonthGraph(viewsets.ViewSet):
     
-    def get(self, request, feuille_id, format=None):
+    def plotM(self, request, feuille_id, format=None):
         
         feuille = Feuille.objects.get(id=feuille_id)
         
@@ -306,14 +307,42 @@ class PlotMonthGraph(APIView):
         def __v(c):
             return round(c,2) if type(c) == float else c
         
-        datas = {
-            "x": list(mapping), 
-            "xy":  [__v(total_per_day.get(x, 0.0)) for x in mapping],
-            "threeshold": 15,
-            "currentDay": datetime.date.today().day,
-            "month": date.month,
-            "year": date.year
-        }
+        datas = ApexChart.to_type_column(
+            x=list(mapping), 
+            series=[ApexChartSerie(name="total", type="column", data=[__v(total_per_day.get(x, 0.0)) for x in mapping])], 
+            title_text=f"Somme d'argent dépensée au {date.month} {date.year}"
+        )
+        
+        return Response(data=datas, status=status.HTTP_200_OK)
+    
+    def plotS(self, request, feuille_id, format=None):
+        feuille = Feuille.objects.get(id=feuille_id)
+        
+        if not feuille:
+            return Response(data=None, status=status.HTTP_404_NOT_FOUND)
+        
+        date = datetime.datetime.fromtimestamp(feuille.date)
+        tdcs = FeuillesService.retrieve_tdcs(pk=feuille_id)
+        
+        shops_label = list()
+        shops_quant = list()
+        
+        for tdc in tdcs:
+            try:
+                index = shops_label.index(tdc.shop.name)
+            except:
+                shops_label.append(tdc.shop.name)
+                shops_quant.append(1)
+            else:
+                shops_quant[index] += 1
+                
+        datas = ApexChart.to_type_column(
+            x=shops_label, 
+            series=[ApexChartSerie(name="occurance", type="column", data=shops_quant)], 
+            title_text=f"Magasins pendant {date.month} {date.year}"
+        )
+        
+        print(datas)
         
         return Response(data=datas, status=status.HTTP_200_OK)
         

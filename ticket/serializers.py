@@ -67,7 +67,7 @@ class TicketDeCaisseSerializer(serializers.ModelSerializer):
     shop = TicketDeCaisseShopEnumSerializer()
     localisation = TicketDeCaisseLocalisationEnumSerializer()
     category = TicketDeCaisseTypeEnumSerializer()
-    articles = ArticleSerializer(many=True)
+    articles = ArticleSerializer(many=True, required=False)
     total = serializers.ReadOnlyField()
     attachement = AttachementImageTicketSerializer()
     
