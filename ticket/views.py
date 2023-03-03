@@ -362,17 +362,21 @@ class Attachements(viewsets.ModelViewSet):
     
     def create(self, request, format=None):
         image = request.data.get('image', None)
+        name = request.data.get('name', None)
         category = request.data.get('category', None)
         
         if image is None or category is None:
             return Response(data=None, status=status.HTTP_400_BAD_REQUEST)
         
+        if not name:
+            name = image.namme
+        
         if category == 'article':
-            img = AttachementImageArticle.objects.create(image=image, name=image.name, category='article')
+            img = AttachementImageArticle.objects.create(image=image, name=name, category='article')
             datas = AttachementImageArticleSerializer(img)
             return Response(data=datas.data, status=status.HTTP_201_CREATED)
         elif category == 'ticket':
-            img = AttachementImageTicket.objects.create(image=image, name=image.name, category='ticket')
+            img = AttachementImageTicket.objects.create(image=image, name=name, category='ticket')
             datas = AttachementImageTicketSerializer(img)
             return Response(data=datas.data, status=status.HTTP_201_CREATED)
 
