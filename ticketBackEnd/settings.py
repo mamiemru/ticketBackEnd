@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     'ticket',
     'rest_framework',
     'corsheaders',
-    'django_minio_backend',  # https://github.com/theriverman/django-minio-backend
+    ##'django_minio_backend',  # https://github.com/theriverman/django-minio-backend
     'dbbackup',  # django-dbbackup
 ]
 
@@ -158,15 +158,16 @@ STATICFILES_DIRS = (
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+"""
 ## Minio
 MINIO_ENDPOINT = '127.0.0.1:9000'
-MINIO_EXTERNAL_ENDPOINT = "192.168.1.56:9000"  # Default is same as MINIO_ENDPOINT
+MINIO_EXTERNAL_ENDPOINT = "127.0.0.1:9000"  # Default is same as MINIO_ENDPOINT
 MINIO_USE_HTTPS = False
 MINIO_EXTERNAL_ENDPOINT_USE_HTTPS = False  # Default is same as MINIO_USE_HTTPS
 MINIO_ACCESS_KEY = 'minioadmin'
 MINIO_SECRET_KEY = 'minioadmin'
 MINIO_URL_EXPIRY_HOURS = timedelta(days=1)  # Default is 7 days (longest) if not defined
-MINIO_CONSISTENCY_CHECK_ON_START = True
+MINIO_CONSISTENCY_CHECK_ON_START = False
 MINIO_PRIVATE_BUCKETS = [
     'ticket',
 ]
@@ -177,6 +178,7 @@ MINIO_POLICY_HOOKS: List[Tuple[str, dict]] = []
 # MINIO_MEDIA_FILES_BUCKET = 'my-media-files-bucket'  # replacement for MEDIA_ROOT
 # MINIO_STATIC_FILES_BUCKET = 'my-static-files-bucket'  # replacement for STATIC_ROOT
 MINIO_BUCKET_CHECK_ON_SAVE = True  # Default: True // Creates bucket if missing, then save
+"""
 
 DBBACKUP_STORAGE = 'django.core.files.storage.FileSystemStorage'
 DBBACKUP_STORAGE_OPTIONS = {'location': 'dbbackups'}

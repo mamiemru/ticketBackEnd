@@ -64,7 +64,7 @@ class Migration(migrations.Migration):
                 ('date', models.DateTimeField(unique=True)),
                 ('category', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='ticket.ticketdecaissetypeenum')),
                 ('localisation', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='ticket.ticketdecaisselocalisationenum')),
-                ('shop', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='ticket.ticketdecaisseshopenum')),
+                ('shop', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='ticket.TicketDeCaisseShopEnum')),
             ],
         ),
         migrations.CreateModel(

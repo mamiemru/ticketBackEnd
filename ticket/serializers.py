@@ -17,11 +17,6 @@ class TicketDeCaisseShopEnumSerializer(serializers.ModelSerializer):
     class Meta:
         model = TicketDeCaisseShopEnum
         fields = '__all__'
-        
-class TicketDeCaisseLocalisationEnumSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TicketDeCaisseLocalisationEnum
-        fields = '__all__'
             
 class ItemArticleGroupEnumSerializer(serializers.ModelSerializer):
     class Meta:
@@ -48,12 +43,11 @@ class ItemArticleSerializer(serializers.ModelSerializer):
         
 class TicketDeCaisseHeaderSerializer(serializers.ModelSerializer):
     shop = TicketDeCaisseShopEnumSerializer()
-    localisation = TicketDeCaisseLocalisationEnumSerializer()
     category = TicketDeCaisseTypeEnumSerializer()
     
     class Meta:
         model = TicketDeCaisse
-        fields = ('id', 'shop', 'localisation', 'date', 'category')
+        fields = ('id', 'shop', 'date', 'category')
                
 class ArticleSerializer(serializers.ModelSerializer):
     item = ItemArticleSerializer()
@@ -65,7 +59,6 @@ class ArticleSerializer(serializers.ModelSerializer):
 class TicketDeCaisseSerializer(serializers.ModelSerializer):
     
     shop = TicketDeCaisseShopEnumSerializer()
-    localisation = TicketDeCaisseLocalisationEnumSerializer()
     category = TicketDeCaisseTypeEnumSerializer()
     articles = ArticleSerializer(many=True, required=False)
     total = serializers.ReadOnlyField()
@@ -73,7 +66,7 @@ class TicketDeCaisseSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = TicketDeCaisse
-        fields = ('id', 'shop', 'localisation', 'date', 'category', 'articles', 'total', 'attachement')
+        fields = ('id', 'shop', 'date', 'category', 'articles', 'total', 'attachement')
 
 class FeuilleSerializer(serializers.ModelSerializer):
     year = serializers.ReadOnlyField()

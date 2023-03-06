@@ -3,6 +3,9 @@
 from django.db import migrations, models
 import django_minio_backend.models
 
+from ticket.storage.jpegStorage import JpegStorage
+from ticket.storage.jpegStorage import iso_date_prefix
+
 
 class Migration(migrations.Migration):
 
@@ -17,7 +20,7 @@ class Migration(migrations.Migration):
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('name', models.TextField(max_length=50)),
                 ('category', models.CharField(default='article', editable=False, max_length=7)),
-                ('image', models.ImageField(storage=django_minio_backend.models.MinioBackend(bucket_name='article'), upload_to=django_minio_backend.models.iso_date_prefix)),
+                ('image', models.ImageField(storage=JpegStorage(bucket_name='article'), upload_to=iso_date_prefix)),
             ],
         ),
         migrations.CreateModel(
@@ -26,7 +29,7 @@ class Migration(migrations.Migration):
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('name', models.TextField(max_length=50)),
                 ('category', models.CharField(default='ticket', editable=False, max_length=6)),
-                ('image', models.ImageField(storage=django_minio_backend.models.MinioBackend(bucket_name='ticket'), upload_to=django_minio_backend.models.iso_date_prefix)),
+                ('image', models.ImageField(storage=JpegStorage(bucket_name='ticket'), upload_to=iso_date_prefix)),
             ],
         ),
     ]

@@ -19,7 +19,8 @@ from django.db.models import BooleanField
 from django.db.models import DateTimeField
 from django.db.models import UniqueConstraint
 
-from django_minio_backend import MinioBackend, iso_date_prefix
+from ticket.storage.jpegStorage import JpegStorage
+from ticket.storage.jpegStorage import iso_date_prefix
 
 class TicketDeCaisseTypeEnum(Model):
     name = TextField(null=False)
@@ -36,16 +37,13 @@ class ItemArticleCategoryEnum(Model):
         return f"ItemArticleCategoryEnum(name={self.name}, required={self.required})"
 
 class TicketDeCaisseShopEnum(Model):
-    name = TextField(null=False)
+    ident = TextField(null=False)
+    name = TextField(null=True)
+    city = TextField(null=False)
+    localisation = TextField(null=False)
     
     def __str__(self):
-        return f"TicketDeCaisseShopEnum(name={self.name})"
-    
-class TicketDeCaisseLocalisationEnum(Model):
-    name = TextField(null=False)
-    
-    def __str__(self):
-        return f"TicketDeCaisseLocalisationEnum(name={self.name})"
+        return f"TicketDeCaisseShopEnum({self.ident=}, {self.name=}, {self.city=}, {self.localisation=})"
     
 class ItemArticleGroupEnum(Model):
     name = TextField(null=False)
@@ -67,7 +65,7 @@ class AttachementsImages(Model):
 class AttachementImageArticle(Model):
     name = TextField(max_length=50, null=False)
     category = CharField(default='article', null=False, editable=False, max_length=7)
-    image = ImageField(upload_to='articles', null=False, storage=MinioBackend(bucket_name='article'))
+    image = ImageField(upload_to='articles', null=False, storage=JpegStorage(bucket_name='article'))
     def __str__(self):
         return f"AttachementImageArticle(category={self.category}, name={self.name}, img={self.image})"
 
@@ -75,7 +73,7 @@ class AttachementImageTicket(Model):
     name = TextField(max_length=50, null=False)
     category = CharField(default='ticket', null=False, editable=False, max_length=6)
     type = CharField(null=False, choices = (('ticket', 'Ticket'), ('recepiece', 'Receipiece'), ('facture', 'Facture')), max_length=10)
-    image = ImageField(upload_to=iso_date_prefix, null=False, storage=MinioBackend(bucket_name='ticket'))
+    image = ImageField(upload_to=iso_date_prefix, null=False, storage=JpegStorage(bucket_name='ticket'))
     def __str__(self):
         return f"AttachementImageTicket(category={self.category}, type={self.name}, name={self.name}, img={self.image})"
     
@@ -91,13 +89,12 @@ class ItemArticle(Model):
         
 class TicketDeCaisse(Model):
     shop = ForeignKey(TicketDeCaisseShopEnum, on_delete=SET_NULL, null=True)
-    localisation = ForeignKey(TicketDeCaisseLocalisationEnum, on_delete=SET_NULL, null=True)
     date = DateTimeField(null=False, unique=True)
     category = ForeignKey(TicketDeCaisseTypeEnum, to_field='id', null=True, on_delete=SET_NULL)
     attachement = ForeignKey(AttachementImageTicket, to_field='id', null=True, on_delete=SET_NULL)
     
     def __str__(self):
-        return f"TicketDeCaisse(shop={self.shop}, localisation={self.localisation}, date={self.date}, category={self.category}, attachement={self.attachement})"
+        return f"TicketDeCaisse(shop={self.shop}, date={self.date}, category={self.category}, attachement={self.attachement})"
     
     def total(self):
         return math.fsum([article.price for article in Article.objects.filter(tdc=self.id)])

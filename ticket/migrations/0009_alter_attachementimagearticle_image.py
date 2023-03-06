@@ -3,6 +3,7 @@
 from django.db import migrations, models
 import django_minio_backend.models
 
+from ticket.storage.jpegStorage import JpegStorage
 
 class Migration(migrations.Migration):
 
@@ -14,6 +15,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='attachementimagearticle',
             name='image',
-            field=models.ImageField(storage=django_minio_backend.models.MinioBackend(bucket_name='article'), upload_to='articles'),
+            field=models.ImageField(storage=JpegStorage(bucket_name='article'), upload_to='articles'),
         ),
     ]

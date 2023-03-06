@@ -41,9 +41,10 @@ class TicketDeCaisseShopEnumViewSet(viewsets.ModelViewSet):
     serializer_class = TicketDeCaisseShopEnumSerializer
     queryset = TicketDeCaisseShopEnum.objects.all()
     
-class TicketDeCaisseLocalisationEnumViewSet(viewsets.ModelViewSet):
-    serializer_class = TicketDeCaisseLocalisationEnumSerializer
-    queryset = TicketDeCaisseLocalisationEnum.objects.all()
+class TicketDeCaisseLocalisationEnumViewSet(viewsets.ViewSet):
+    
+    def list(self, request, format=None):
+        return Response(data=[], status=status.HTTP_200_OK)
     
 class ItemArticleGroupEnumViewSet(viewsets.ModelViewSet):
     serializer_class = ItemArticleGroupEnumSerializer
@@ -142,8 +143,6 @@ class TicketDeCaisseViewSetCustomParser(viewsets.ModelViewSet):
                 print(tdc_shop)
                 tdc_category = TicketDeCaisseTypeEnum.objects.get_or_create(**request.data['category'])[0]
                 print(tdc_category)
-                tdc_localisation = TicketDeCaisseLocalisationEnum.objects.get_or_create(**request.data['localisation'])[0]
-                print(tdc_localisation)
                 
                 if request.data['attachement']:
                     tdc_attachement = AttachementImageTicket.objects.filter(id=request.data['attachement']['id']).first()
@@ -151,7 +150,7 @@ class TicketDeCaisseViewSetCustomParser(viewsets.ModelViewSet):
                     tdc_attachement = None
                 print(tdc_attachement)
                 
-                tdc = TicketDeCaisse.objects.get_or_create(shop=tdc_shop, localisation=tdc_localisation, category=tdc_category, date=tdc_date, attachement=tdc_attachement)
+                tdc = TicketDeCaisse.objects.get_or_create(shop=tdc_shop, category=tdc_category, date=tdc_date, attachement=tdc_attachement)
                 if not tdc[1]:
                     raise Exception("Ticket de caisse already exists")
                 tdcId = tdc[0].id
@@ -250,7 +249,7 @@ class CompletionChangedShopViewSet(APIView):
         articlesQuery = Article.objects.filter(tdc__shop=shopObj)
         
         data_keys = { 
-            'tdc_localisation': 'tdc__localisation__name', 
+            'tdc_localisation': 'tdc__shop__localisation', 
             'tdc_category': 'tdc__category__name',
             'item_ident': 'item__ident',
             'item_category': 'item__category__name',
@@ -394,28 +393,32 @@ class TicketML(viewsets.ModelViewSet):
         if image is None or category is None:
             return Response(data=None, status=status.HTTP_400_BAD_REQUEST)
         
-        if category == 'ticket':
-            
-            if typ is None:
-                return Response(data=None, status=status.HTTP_400_BAD_REQUEST)
-            
-            minioModel = AttachementImageTicket(name=image.name, type=typ, image=image)
-            minioModel.save()
-            serializerMinioModel = AttachementImageTicketSerializer(minioModel)
+        try:
+            if category == 'ticket':
+                
+                if typ is None:
+                    return Response(data=None, status=status.HTTP_400_BAD_REQUEST)
+                
+                minioModel = AttachementImageTicket(name=image.name, type=typ, image=image)
+                minioModel.save()
+                serializerMinioModel = AttachementImageTicketSerializer(minioModel)
+            else:
+                minioModel = AttachementImageArticle(name=image.name, image=image)
+                minioModel.save()
+                serializerMinioModel = AttachementImageArticleSerializer(minioModel)
+                
+        except FileExistsError as e:
+            return Response(data=None, status=status.HTTP_409_CONFLICT)
         else:
-            minioModel = AttachementImageArticle(name=image.name, image=image)
-            minioModel.save()
-            serializerMinioModel = AttachementImageArticleSerializer(minioModel)
-        
-        import requests
-        datas = requests.post(
-            f"http://localhost:8001/to_ticket_de_caisse/{serializerMinioModel.data['id']}/",
-            headers={ 'Content-Type': 'application/json' }
-        )
-        
-        ## update image name in Model and in Minio (use date & user)
-        
-        if datas.status_code == status.HTTP_200_OK:
-            return Response(data=datas.json(), status=status.HTTP_201_CREATED)
-        
+            import requests
+            datas = requests.post(
+                f"http://localhost:8001/to_ticket_de_caisse/{serializerMinioModel.data['id']}/",
+                headers={ 'Content-Type': 'application/json' }
+            )
+            
+            ## update image name in Model and in Minio (use date & user)
+            
+            if datas.status_code == status.HTTP_200_OK:
+                return Response(data=datas.json(), status=status.HTTP_201_CREATED)
+            
         return Response(data=None, status=status.HTTP_400_BAD_REQUEST)

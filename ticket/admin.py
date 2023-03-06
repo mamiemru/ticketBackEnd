@@ -3,7 +3,6 @@ from ticket.models import *
 
 admin.site.register(TicketDeCaisseTypeEnum)
 admin.site.register(TicketDeCaisseShopEnum)
-admin.site.register(TicketDeCaisseLocalisationEnum)
 admin.site.register(ItemArticleCategoryEnum)
 admin.site.register(ItemArticleGroupEnum)
 admin.site.register(ItemArticle)
