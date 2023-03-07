@@ -38,6 +38,7 @@ class ItemArticleCategoryEnumViewSet(viewsets.ModelViewSet):
     queryset = ItemArticleCategoryEnum.objects.all()
     
 class TicketDeCaisseShopEnumViewSet(viewsets.ModelViewSet):
+    parser_classes = [MultiPartParser, FormParser]
     serializer_class = TicketDeCaisseShopEnumSerializer
     queryset = TicketDeCaisseShopEnum.objects.all()
     
@@ -144,6 +145,9 @@ class TicketDeCaisseViewSetCustomParser(viewsets.ModelViewSet):
                 tdc_category = TicketDeCaisseTypeEnum.objects.get_or_create(**request.data['category'])[0]
                 print(tdc_category)
                 
+                if not tdc_category or not tdc_shop or not tdc_date:
+                    return Response(data={'error': 'field empty'}, status=status.HTTP_400_BAD_REQUEST)
+                
                 if request.data['attachement']:
                     tdc_attachement = AttachementImageTicket.objects.filter(id=request.data['attachement']['id']).first()
                 else:
@@ -249,7 +253,6 @@ class CompletionChangedShopViewSet(APIView):
         articlesQuery = Article.objects.filter(tdc__shop=shopObj)
         
         data_keys = { 
-            'tdc_localisation': 'tdc__shop__localisation', 
             'tdc_category': 'tdc__category__name',
             'item_ident': 'item__ident',
             'item_category': 'item__category__name',
@@ -261,6 +264,7 @@ class CompletionChangedShopViewSet(APIView):
             k: [l[v] for l in articlesQuery.values(v).distinct().order_by(v)] for k,v in data_keys.items()
         }
         
+        datas['tdc'] = TicketDeCaisseShopEnumSerializer(shopObj).data
         datas['quant'] = 1
         datas['remise'] = 0.0
         
