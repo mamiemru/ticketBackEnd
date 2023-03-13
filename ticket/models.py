@@ -25,6 +25,7 @@ from ticket.storage.jpegStorage import iso_date_prefix
 class TicketDeCaisseTypeEnum(Model):
     name = TextField(null=False)
     required = BooleanField(null=False, default=False)
+    description = TextField(null=True, default="", max_length=255)
     
     def __str__(self):
         return f"TicketDeCaisseTypeEnum(name={self.name}, required={self.required})"
@@ -97,10 +98,10 @@ class TicketDeCaisse(Model):
         return f"TicketDeCaisse(shop={self.shop}, date={self.date}, category={self.category}, attachement={self.attachement})"
     
     def total(self):
-        return math.fsum([article.price for article in Article.objects.filter(tdc=self.id)])
+        return round(math.fsum([article.price for article in Article.objects.filter(tdc=self.id)]), 2)
     
     def sum_total(self, articles : List):
-        return math.fsum([article.price for article in articles])
+        return round(math.fsum([article.price for article in articles]), 2)
     
 class Article(Model):
     item = ForeignKey(ItemArticle, to_field='id', on_delete=CASCADE)
@@ -110,7 +111,7 @@ class Article(Model):
     tdc = ForeignKey(TicketDeCaisse, on_delete=CASCADE)
     
     def __str__(self):
-        return f"Article(remise={self.remise}, quantity={self.quantity}, price={self.price}, tdc={self.tdc}, item={self.item})"
+        return f"Article({self.remise=}, quantity={self.quantity}, price={self.price}, tdc={self.tdc}, item={self.item})"
     
 class Feuille(Model):
     date = IntegerField(null=False)
@@ -130,3 +131,10 @@ class Feuille(Model):
     
     def factures_json(self):
         return json.loads(self.factures)
+
+class Factures(Model):
+    datas = TextField(null=False, default="{}")
+    
+    def __str__(self):
+        return f"Factures({self.datas=})"
+    

@@ -30,15 +30,17 @@ from .structs import ApexChart, ApexChartSerie
 from .serializers import *
 
 class TicketDeCaisseTypeEnumViewSet(viewsets.ModelViewSet):
+    parser_classes = [JSONParser, FormParser]
     serializer_class = TicketDeCaisseTypeEnumSerializer
     queryset = TicketDeCaisseTypeEnum.objects.all()
     
 class ItemArticleCategoryEnumViewSet(viewsets.ModelViewSet):
+    parser_classes = [JSONParser, FormParser]
     serializer_class = ItemArticleCategoryEnumSerializer
     queryset = ItemArticleCategoryEnum.objects.all()
     
 class TicketDeCaisseShopEnumViewSet(viewsets.ModelViewSet):
-    parser_classes = [MultiPartParser, FormParser]
+    parser_classes = [JSONParser, FormParser]
     serializer_class = TicketDeCaisseShopEnumSerializer
     queryset = TicketDeCaisseShopEnum.objects.all()
     
@@ -139,11 +141,21 @@ class TicketDeCaisseViewSetCustomParser(viewsets.ModelViewSet):
         try:
             with transaction.atomic():
                 tdc_date = DateService.dateStrToDateEnglishDateFormat(request.data['date'])
-                print(tdc_date)
-                tdc_shop = TicketDeCaisseShopEnum.objects.get_or_create(**request.data['shop'])[0]
-                print(tdc_shop)
+                
+                print(f"{tdc_date=}")
+                
+                tdc_shop : TicketDeCaisseShopEnum = TicketDeCaisseShopEnum(**request.data['shop'])
+                if tdc_shop.ident and tdc_shop.id:
+                    tdc_shop = TicketDeCaisseShopEnum.objects.filter(
+                        id=tdc_shop.id, ident=tdc_shop.ident, name=tdc_shop.name, city=tdc_shop.city, localisation=tdc_shop.localisation
+                    ).first()
+                else:
+                    tdc_shop.ident = tdc_shop.name
+                    tdc_shop.save()
+                print(f"{tdc_shop=}")
+                
                 tdc_category = TicketDeCaisseTypeEnum.objects.get_or_create(**request.data['category'])[0]
-                print(tdc_category)
+                print(f"{tdc_category=}")
                 
                 if not tdc_category or not tdc_shop or not tdc_date:
                     return Response(data={'error': 'field empty'}, status=status.HTTP_400_BAD_REQUEST)
@@ -152,7 +164,7 @@ class TicketDeCaisseViewSetCustomParser(viewsets.ModelViewSet):
                     tdc_attachement = AttachementImageTicket.objects.filter(id=request.data['attachement']['id']).first()
                 else:
                     tdc_attachement = None
-                print(tdc_attachement)
+                print(f"{tdc_attachement=}")
                 
                 tdc = TicketDeCaisse.objects.get_or_create(shop=tdc_shop, category=tdc_category, date=tdc_date, attachement=tdc_attachement)
                 if not tdc[1]:
