@@ -18,6 +18,8 @@ from django.db.models import IntegerField
 from django.db.models import BooleanField
 from django.db.models import DateTimeField
 from django.db.models import UniqueConstraint
+from rest_framework_api_key.models import APIKey
+from rest_framework_api_key.models import AbstractAPIKey
 
 from ticket.storage.jpegStorage import JpegStorage
 from ticket.storage.jpegStorage import iso_date_prefix
@@ -93,9 +95,10 @@ class TicketDeCaisse(Model):
     date = DateTimeField(null=False, unique=True)
     category = ForeignKey(TicketDeCaisseTypeEnum, to_field='id', null=True, on_delete=SET_NULL)
     attachement = ForeignKey(AttachementImageTicket, to_field='id', null=True, on_delete=SET_NULL)
+    api_key = ForeignKey(APIKey, on_delete=SET_NULL, null=True)
     
     def __str__(self):
-        return f"TicketDeCaisse(shop={self.shop}, date={self.date}, category={self.category}, attachement={self.attachement})"
+        return f"TicketDeCaisse(api_key={self.api_key}, shop={self.shop}, date={self.date}, category={self.category}, attachement={self.attachement})"
     
     def total(self):
         return round(math.fsum([article.price for article in Article.objects.filter(tdc=self.id)]), 2)
@@ -109,19 +112,21 @@ class Article(Model):
     remise = FloatField(null=False, default=0.0)
     quantity = IntegerField(null=False, default=1)
     tdc = ForeignKey(TicketDeCaisse, on_delete=CASCADE)
+    api_key = ForeignKey(APIKey, on_delete=SET_NULL, null=True)
     
     def __str__(self):
-        return f"Article({self.remise=}, quantity={self.quantity}, price={self.price}, tdc={self.tdc}, item={self.item})"
+        return f"Article(api_key={self.api_key}, {self.remise=}, quantity={self.quantity}, price={self.price}, tdc={self.tdc}, item={self.item})"
     
 class Feuille(Model):
     date = IntegerField(null=False)
     factures = TextField(null=False, default="{}")
+    api_key = ForeignKey(APIKey, on_delete=SET_NULL, null=True)
     
     class Meta:
         ordering  = ['-date']
     
     def __str__(self):
-        return f"Feuille(date={self.date}, factures={self.factures})"
+        return f"Feuille(api_key={self.api_key}, date={self.date}, factures={self.factures})"
 
     def year(self):
         return datetime.datetime.fromtimestamp(self.date).year
@@ -134,7 +139,19 @@ class Feuille(Model):
 
 class Factures(Model):
     datas = TextField(null=False, default="{}")
+    api_key = ForeignKey(APIKey, on_delete=SET_NULL, null=True)
     
     def __str__(self):
-        return f"Factures({self.datas=})"
+        return f"Factures(api_key={self.api_key}, {self.datas=})"
     
+## ====================================================================================================
+##
+##  API KEYS MODELS
+##
+## ====================================================================================================
+
+class Profile(Model):
+    name = CharField(max_length=128)
+
+class UserApiKey(AbstractAPIKey):
+    profile = ForeignKey(Profile, on_delete=SET_NULL, null=True, related_name="api_keys")

@@ -6,3 +6,4 @@ django-filter==22.1
 django-cors-headers==3.13.0
 django-minio-backend==3.3.2
 django-dbbackup
+djangorestframework-api-key

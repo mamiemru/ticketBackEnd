@@ -15,63 +15,72 @@ from ticket.service.dateService import DateService
 from ticket.structs import TableFeuille
 
 from django.conf import settings
+from rest_framework_api_key.models import APIKey
 
 class FeuillesService():
     """ Everything related to Feuille structure
     """
     
     @staticmethod
-    def check_new_month():
+    def check_new_month(api_key):
         """ Create new "feuille" object, this function is called when a new month as began
+        
+        Args:
+            api_key (APIKey): api_key
         """
         currentMonthDate = DateService.currentMonthDate()
         currentMonthTimestamp = DateService.dateToMonthTimestamp(currentMonthDate)
 
         print(f"{currentMonthTimestamp=}")
-        if not Feuille.objects.filter(date=currentMonthTimestamp).first():
-            default_factures_str : Factures = Factures.objects.first()
+        if not Feuille.objects.filter(api_key=api_key, date=currentMonthTimestamp).first():
+            default_factures_str : Factures = Factures.objects.filter(api_key=api_key).first()
             print(f"{default_factures_str=}")
             if default_factures_str:
                 factures = default_factures_str.replace("'", '"')
-                Feuille(date=currentMonthTimestamp, factures=factures).save()
+                Feuille(date=currentMonthTimestamp, factures=factures, api_key=api_key).save()
             
     @staticmethod
-    def retrieve(pk: int) -> Feuille:
+    def retrieve(api_key: APIKey, pk: int) -> Feuille:
         """Retrive feuille object with id=pk but all tdcs are ids not tdc objects 
 
         Args:
+            api_key (APIKey): api_key
             pk (int): id as primary key
 
         Returns:
             Feuille: feuille object with out tdcs objects datas (ids instead)
         """
-        feuille = Feuille.objects.get(id=pk)
+        feuille = Feuille.objects.filter(id=pk, api_key=api_key).first()
+        
+        if not feuille:
+            return None
         
         feuille_timestamp__lte = feuille.date
         feuille_date_lte = datetime.datetime.fromtimestamp(feuille_timestamp__lte)
         feuille_next_date_lte = feuille_date_lte + relativedelta(months=1)
         
-        tdcs = TicketDeCaisse.objects.filter(date__lte=feuille_next_date_lte, date__gte=feuille_date_lte)
+        tdcs = TicketDeCaisse.objects.filter(date__lte=feuille_next_date_lte, date__gte=feuille_date_lte, api_key=api_key)
         feuille.tickets = [tdc.id for tdc in tdcs]
         return feuille
 
     @staticmethod
-    def retrieve_tdcs(pk: int):
+    def retrieve_tdcs(api_key: APIKey, pk: int):
         """ retrieve all tdcs objects from feuille associed with pk variable
 
         Args:
+            api_key (APIKey): api_key
             pk (int): id as primary key
 
         Returns:
             Django QuerySet: List of tdcs
         """
-        feuille = Feuille.objects.get(id=pk)
+        feuille = Feuille.objects.get(api_key=api_key, id=pk)
         
         feuille_timestamp__lte = feuille.date
         feuille_date_lte = datetime.datetime.fromtimestamp(feuille_timestamp__lte)
         feuille_next_date_lte = feuille_date_lte + relativedelta(months=1)
         
-        return TicketDeCaisse.objects.filter(date__lte=feuille_next_date_lte, date__gte=feuille_date_lte).all()
+        return TicketDeCaisse.objects.filter(api_key=api_key, date__lte=feuille_next_date_lte, date__gte=feuille_date_lte).all()
 
     @staticmethod
     def feuilleToDataTable(feuille : Feuille) -> TableFeuille:

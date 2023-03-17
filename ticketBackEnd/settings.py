@@ -43,8 +43,8 @@ INSTALLED_APPS = [
     'ticket',
     'rest_framework',
     'corsheaders',
-    ##'django_minio_backend',  # https://github.com/theriverman/django-minio-backend
-    'dbbackup',  # django-dbbackup
+    'dbbackup',
+    "rest_framework_api_key",
 ]
 
 MIDDLEWARE = [
@@ -66,14 +66,17 @@ CORS_ALLOWED_ORIGINS = [
 REST_FRAMEWORK = {
     # Use Django's standard `django.contrib.auth` permissions,
     # or allow read-only access for unauthenticated users.
+    'PAGE_SIZE': None,
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny'
     ],
     'DEFAULT_PARSER_CLASSES': [
         'rest_framework.parsers.FileUploadParser'
     ],
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-    'PAGE_SIZE': None
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework_api_key.permissions.HasAPIKey",
+    ]
 }
 
 ROOT_URLCONF = 'ticketBackEnd.urls'
