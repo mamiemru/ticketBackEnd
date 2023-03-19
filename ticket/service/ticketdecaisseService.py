@@ -7,6 +7,7 @@ from rest_framework_api_key.models import APIKey
 from ticket.service.dateService import DateService
 
 from ticket.models import Article
+from ticket.models import ItemArticle
 from ticket.models import TicketDeCaisse
 from ticket.models import ItemArticleGroupEnum
 from ticket.models import AttachementImageTicket
@@ -51,11 +52,11 @@ class TicketDeCaisseService:
                     tdc_attachement = None
                 print(f"{tdc_attachement=}")
                 
-                tdc = TicketDeCaisse.objects.get_or_create(shop=tdc_shop, category=tdc_category, date=tdc_date, attachement=tdc_attachement)
-                if not tdc[1]:
+                new_tdc = TicketDeCaisse.objects.get_or_create(api_key=api_key, shop=tdc_shop, category=tdc_category, date=tdc_date, attachement=tdc_attachement)
+                if not new_tdc[1]:
                     raise Exception("Ticket de caisse already exists")
-                tdcId = tdc[0].id
-                print(tdc, tdcId)
+                new_tdcId : int = new_tdc[0].id
+                print(f"{new_tdcId=}, {new_tdc=}, {tdc=}")
                 
                 for article in tdc['articles']:
                     if not article['item'] or not article['item']['category']:
@@ -73,13 +74,13 @@ class TicketDeCaisseService:
                     )
                     print(item)
                     
-                    tdc_article = Article( tdc=tdc[0], remise=article['remise'], quantity=article['quantity'], price=article['price'], item=item[0] )
+                    tdc_article = Article( tdc=new_tdc[0], remise=article['remise'], quantity=article['quantity'], price=article['price'], item=item[0] )
                     tdc_article.save()
                     print(tdc_article)
         except Exception as e:
             return {'error': str(e)}, status.HTTP_400_BAD_REQUEST
                
-        new_tdc = TicketDeCaisse.objects.get(id=tdcId)
+        new_tdc = TicketDeCaisse.objects.get(api_key=api_key, id=new_tdcId)
         new_tdc.articles = Article.objects.filter(tdc=new_tdc)
         datas = TicketDeCaisseSerializer(new_tdc)
         return datas.data, status.HTTP_201_CREATED

@@ -1,6 +1,12 @@
 
 import requests
 
+from rest_framework import status
+from ticket.models import AttachementImageTicket
+from ticket.models import AttachementImageArticle
+from ticket.serializers import AttachementImageTicketSerializer
+from ticket.serializers import AttachementImageArticleSerializer
+
 class MLService:
     
     @staticmethod

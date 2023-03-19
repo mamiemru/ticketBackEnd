@@ -92,7 +92,7 @@ class ItemArticle(Model):
         
 class TicketDeCaisse(Model):
     shop = ForeignKey(TicketDeCaisseShopEnum, on_delete=SET_NULL, null=True)
-    date = DateTimeField(null=False, unique=True)
+    date = DateTimeField(null=False)
     category = ForeignKey(TicketDeCaisseTypeEnum, to_field='id', null=True, on_delete=SET_NULL)
     attachement = ForeignKey(AttachementImageTicket, to_field='id', null=True, on_delete=SET_NULL)
     api_key = ForeignKey(APIKey, on_delete=SET_NULL, null=True)

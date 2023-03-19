@@ -30,6 +30,16 @@ def get_api_key(request):
     key = request.META["HTTP_AUTHORIZATION"].split()[1]
     return APIKey.objects.get_from_key(key)
 
+class ApiKeyViewSet(viewsets.ModelViewSet):
+    permission_classes = [HasAPIKey]
+    parser_classes = [JSONParser, FormParser]
+    
+    def retrieve(self, request, format=None):
+        print(request.META['HTTP_AUTHORIZATION'])
+        api_key = get_api_key(request=request)
+        print(f'{api_key=}')
+        return Response(data=None , status=status.HTTP_200_OK if api_key else status.HTTP_403_FORBIDDEN)
+
 class TicketDeCaisseTypeEnumViewSet(viewsets.ModelViewSet):
     permission_classes = [HasAPIKey]
     parser_classes = [JSONParser, FormParser]
@@ -112,7 +122,7 @@ class TicketDeCaisseViewSetCustomParser(viewsets.ModelViewSet):
     
     def create(self, request, format=None):
         api_key = get_api_key(request=request)
-        data, status = TicketDeCaisseService.create(api_key=api_key, tdc=tdc)
+        data, status = TicketDeCaisseService.create(api_key=api_key, tdc=request.data)
         return Response(data=data, status=status)
     
 class ArticleViewSet(viewsets.ModelViewSet):

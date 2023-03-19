@@ -25,6 +25,7 @@ from ticket.views import *
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    path('api-auth/check/', ApiKeyViewSet.as_view({'get': 'retrieve'})),
     path('ticket_de_caisse/category/', TicketDeCaisseTypeEnumViewSet.as_view({'get': 'list', 'post': 'create'})),
     path('ticket_de_caisse/category/<str:pk>/', TicketDeCaisseTypeEnumViewSet.as_view({'get': 'retrieve', 'delete': 'destroy', 'put': 'update'})),
     path('ticket_de_caisse/article/item/category/', ItemArticleCategoryEnumViewSet.as_view({'get': 'list', 'post': 'create'})),
