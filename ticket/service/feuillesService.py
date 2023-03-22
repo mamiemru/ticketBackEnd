@@ -1,20 +1,19 @@
 
 
-import json
 import datetime
 
 from typing import Dict
-from pathlib import Path
 from dateutil.relativedelta import relativedelta
 
 from ticket.models import Feuille
 from ticket.models import Factures
 from ticket.models import TicketDeCaisse
-from ticket.models import TicketDeCaisseTypeEnum
-from ticket.service.dateService import DateService
-from ticket.structs import TableFeuille
 
-from django.conf import settings
+from ticket.structs import TableFeuille
+from ticket.structs import TableFeuilleCategory
+
+from ticket.service.dateService import DateService
+
 from rest_framework_api_key.models import APIKey
 
 class FeuillesService():
@@ -36,7 +35,7 @@ class FeuillesService():
             default_factures_str : Factures = Factures.objects.filter(api_key=api_key).first()
             print(f"{default_factures_str=}")
             if default_factures_str:
-                factures = default_factures_str.replace("'", '"')
+                factures = default_factures_str.datas.replace("'", '"')
                 Feuille(date=currentMonthTimestamp, factures=factures, api_key=api_key).save()
             
     @staticmethod
@@ -84,21 +83,22 @@ class FeuillesService():
 
     @staticmethod
     def feuilleToDataTable(feuille : Feuille) -> TableFeuille:
-        l : TableFeuille = TableFeuille.empty()
+        table_feuille : TableFeuille = TableFeuille.empty()
         factures = feuille.factures_json()
         
         if factures:
             for name, price in factures.items():
-                l.add(category="Factures", name=name, price=price, date=None, required=True)
+                table_feuille.add(category="Factures", name=name, price=price, date=None, required=True)
                 
+        if feuille.tickets:
             for ticketId in feuille.tickets:
                 tdc = TicketDeCaisse.objects.filter(id=ticketId).first()
                 if tdc:
                     price = tdc.total()
                     required = tdc.category.required
-                    l.add(category=tdc.category.name, name=tdc.shop.name, price=price, date=tdc.date, required=required)
+                    table_feuille.add(category=tdc.category.name, name=tdc.shop.name, price=price, date=tdc.date, required=required)
 
-        return l
+        return table_feuille
 
     @staticmethod
     def feuilleSummary(f: Feuille, t: TableFeuille) -> Dict[str, float]:
@@ -106,13 +106,14 @@ class FeuillesService():
         ttevitable_v = 0.0
         dateService = DateService()
 
-        for k, c in t.items.items():
+        for _, c in t.items.items():
             c : TableFeuilleCategory = c
             ttdepense_v  += c.header.price
             ttevitable_v += c.header.priceOnlyRequired
 
-        ffactures : TableFeuilleCategory = t.items['Factures']
-        ttfactures = ffactures.header.price
+
+        ffactures : TableFeuilleCategory = t.items.get('Factures')
+        ttfactures = ffactures.header.price if ffactures else 0
 
         if f.tickets:
             tdcinf, tdcsup = f.tickets[0], f.tickets[-1]

@@ -39,7 +39,10 @@ class JpegStorage(FileSystemStorage):
         print(f"_save({name=} -> {filepath.parent} -> {filepath=})")
         
         os.makedirs(filepath.parent, 777, exist_ok=True)
-        fd = os.open(filepath, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o666)
+        try:
+            fd = os.open(filepath, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o666)
+        except FileExistsError as e:
+            raise e
         _file = None
         try:
             locks.lock(fd, locks.LOCK_EX)

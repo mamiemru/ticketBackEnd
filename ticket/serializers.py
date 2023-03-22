@@ -26,7 +26,7 @@ class ItemArticleGroupEnumSerializer(serializers.ModelSerializer):
 class AttachementImageTicketSerializer(serializers.ModelSerializer):
     class Meta:
         model = AttachementImageTicket
-        fields = '__all__'
+        fields = ('name', 'category', 'type', 'image')
         
 class AttachementImageArticleSerializer(serializers.ModelSerializer):
     class Meta:
@@ -54,7 +54,7 @@ class ArticleSerializer(serializers.ModelSerializer):
     tdc = TicketDeCaisseHeaderSerializer()
     class Meta:
         model = Article
-        fields = '__all__'
+        fields = ('item', 'tdc', 'price', 'remise', 'quantity')
 
 class TicketDeCaisseSerializer(serializers.ModelSerializer):
     
@@ -95,13 +95,7 @@ class AttachementsImagesSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = AttachementsImages
-        fields = '__all__'        
-        
-class AttachementImageTicketSerializer(serializers.ModelSerializer):
-    
-    class Meta:
-        model = AttachementImageTicket
-        fields = '__all__'       
+        fields = '__all__'           
          
 class AttachementImageArticleSerializer(serializers.ModelSerializer):
     

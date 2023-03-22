@@ -2,6 +2,7 @@
 from rest_framework import status
 from rest_framework_api_key.models import APIKey
 
+from ticket.models import Article
 from ticket.models import ItemArticle
 from ticket.models import ItemArticleGroupEnum
 from ticket.models import AttachementImageArticle

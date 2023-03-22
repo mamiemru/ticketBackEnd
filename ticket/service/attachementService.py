@@ -5,7 +5,7 @@ from rest_framework_api_key.models import APIKey
 from ticket.models import AttachementsImages
 from ticket.models import AttachementImageTicket
 from ticket.models import AttachementImageArticle
-
+from ticket.serializers import AttachementsImagesSerializer
 from ticket.serializers import AttachementImageTicketSerializer
 from ticket.serializers import AttachementImageArticleSerializer
 
@@ -38,7 +38,7 @@ class AttachementService:
             datas = AttachementImageArticleSerializer(img)
             return datas.data, status.HTTP_201_CREATED
         elif category == 'ticket':
-            img = AttachementImageTicket.objects.create(image=image, name=name, category='ticket')
+            img = AttachementImageTicket.objects.create(api_key=api_key, image=image, name=name, category='ticket')
             datas = AttachementImageTicketSerializer(img)
             return datas.data, status.HTTP_201_CREATED
 

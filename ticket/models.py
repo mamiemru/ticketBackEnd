@@ -10,14 +10,12 @@ from django.db.models import CASCADE
 from django.db.models import SET_NULL
 from django.db.models import CharField
 from django.db.models import TextField
-from django.db.models import AutoField
 from django.db.models import FloatField
 from django.db.models import ImageField
 from django.db.models import ForeignKey
 from django.db.models import IntegerField
 from django.db.models import BooleanField
 from django.db.models import DateTimeField
-from django.db.models import UniqueConstraint
 from rest_framework_api_key.models import APIKey
 from rest_framework_api_key.models import AbstractAPIKey
 
@@ -43,10 +41,11 @@ class TicketDeCaisseShopEnum(Model):
     ident = TextField(null=False)
     name = TextField(null=True)
     city = TextField(null=False)
+    postal_code = IntegerField(null=False)
     localisation = TextField(null=False)
     
     def __str__(self):
-        return f"TicketDeCaisseShopEnum({self.ident=}, {self.name=}, {self.city=}, {self.localisation=})"
+        return f"TicketDeCaisseShopEnum({self.ident=}, {self.name=}, {self.city=}, {self.postal_code=}, {self.localisation=})"
     
 class ItemArticleGroupEnum(Model):
     name = TextField(null=False)
@@ -77,8 +76,10 @@ class AttachementImageTicket(Model):
     category = CharField(default='ticket', null=False, editable=False, max_length=6)
     type = CharField(null=False, choices = (('ticket', 'Ticket'), ('recepiece', 'Receipiece'), ('facture', 'Facture')), max_length=10)
     image = ImageField(upload_to=iso_date_prefix, null=False, storage=JpegStorage(bucket_name='ticket'))
+    api_key = ForeignKey(APIKey, on_delete=SET_NULL, null=True)
+    
     def __str__(self):
-        return f"AttachementImageTicket(category={self.category}, type={self.name}, name={self.name}, img={self.image})"
+        return f"AttachementImageTicket(api_key={self.api_key}, category={self.category}, type={self.name}, name={self.name}, img={self.image})"
     
 class ItemArticle(Model):
     ident = TextField(null=False)
@@ -103,7 +104,8 @@ class TicketDeCaisse(Model):
     def total(self):
         return round(math.fsum([article.price for article in Article.objects.filter(tdc=self.id)]), 2)
     
-    def sum_total(self, articles : List):
+    @staticmethod
+    def sum_total(articles : List):
         return round(math.fsum([article.price for article in articles]), 2)
     
 class Article(Model):

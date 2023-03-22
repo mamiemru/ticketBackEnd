@@ -1,17 +1,14 @@
 
 import requests
-
+from typing import Dict
 from rest_framework import status
+from rest_framework_api_key.models import AbstractAPIKey
 from ticket.models import AttachementImageTicket
-from ticket.models import AttachementImageArticle
-from ticket.serializers import AttachementImageTicketSerializer
-from ticket.serializers import AttachementImageArticleSerializer
 
 class MLService:
     
     @staticmethod
-    def create(api_key, data, format=None):
-        serializerMinioModel = None
+    def create(api_key: AbstractAPIKey, data : Dict[str, str], raw_api_key: str):
         image = data.get('image', None)
         typ = data.get('type', None)
         category = data.get('category', None)
@@ -25,30 +22,33 @@ class MLService:
             if typ is None:
                 return 'type is null', status.HTTP_400_BAD_REQUEST
             
-            try:
-                minioModel = AttachementImageTicket(name=image.name, type=typ, image=image)
-                minioModel.save()
-            except FileExistsError as e:
-                print(f'file {image.name} already exist')
-                minioModel = AttachementImageTicket.objects.get(name=image.name)
+            check_already_exist = AttachementImageTicket.objects.filter(api_key=api_key, name=image.name, type=typ).first()
             
-            serializerMinioModel = AttachementImageTicketSerializer(minioModel)
+            if not check_already_exist:
+                try:
+                    minioModel = AttachementImageTicket(api_key=api_key, name=image.name, type=typ, image=image)
+                    minioModel.save()
+                except FileExistsError as e:
+                    return None, status.HTTP_409_CONFLICT
+                
+            try:
+                minioModel = AttachementImageTicket.objects.get(api_key=api_key, name=image.name)
+            except:
+                return None, status.HTTP_409_CONFLICT
+            else:        
+                datas = requests.post(
+                    f"http://localhost:8001/to_ticket_de_caisse/{minioModel.id}/",
+                    headers={ 
+                        'Content-Type': 'application/json',  
+                        'Authorization': f'Api-Key {raw_api_key}'
+                    }
+                )
+                if status.HTTP_200_OK <= datas.status_code <= status.HTTP_201_CREATED:
+                    return datas.json(), status.HTTP_201_CREATED
+                
+                if datas.status_code == status.HTTP_403_FORBIDDEN:
+                    return None, status.HTTP_403_FORBIDDEN
+                
+                return None, status.HTTP_400_BAD_REQUEST    
         else:
-            try:
-                minioModel = AttachementImageArticle(name=image.name, image=image)
-                minioModel.save()
-            except FileExistsError as e:
-                print(f'file {image.name} already exist')
-                minioModel = AttachementImageArticle.objects.get(name=image.name)
-                
-            serializerMinioModel = AttachementImageArticleSerializer(minioModel)
-                
-        datas = requests.post(
-            f"http://localhost:8001/to_ticket_de_caisse/{serializerMinioModel.data['id']}/",
-            headers={ 'Content-Type': 'application/json' }
-        )
-        
-        if datas.status_code == status.HTTP_200_OK:
-            return datas.json(), status.HTTP_201_CREATED
-            
-        return None, status.HTTP_400_BAD_REQUEST
+            return category, status.HTTP_400_BAD_REQUEST     

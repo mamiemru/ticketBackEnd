@@ -31,8 +31,8 @@ class TableFeuilleRow:
         return {
             "name": self.name,
             "date": self.date,
-            "price": self.price,
-            "priceOnlyRequired": self.priceOnlyRequired
+            "price": round(self.price, 2),
+            "priceOnlyRequired": round(self.priceOnlyRequired, 2)
         }
 
 @dataclass

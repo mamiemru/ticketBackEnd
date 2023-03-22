@@ -3,6 +3,7 @@ from rest_framework import status
 from rest_framework_api_key.models import APIKey
 
 from ticket.models import Article
+from ticket.serializers import ArticleSerializer
 
 class ArticleService:
     

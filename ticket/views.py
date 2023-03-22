@@ -26,9 +26,12 @@ from ticket.pagination import StandardResultsSetPagination
 from .models import *
 from .serializers import *
 
+
+def get_raw_api_key(request):
+    return request.META["HTTP_AUTHORIZATION"].split()[1]
+
 def get_api_key(request):
-    key = request.META["HTTP_AUTHORIZATION"].split()[1]
-    return APIKey.objects.get_from_key(key)
+    return APIKey.objects.get_from_key(get_raw_api_key(request=request))
 
 class ApiKeyViewSet(viewsets.ModelViewSet):
     permission_classes = [HasAPIKey]
@@ -232,5 +235,6 @@ class TicketML(viewsets.ModelViewSet):
     
     def create(self, request, format=None):
         api_key = get_api_key(request=request)
-        data, status = MLService.create(api_key=api_key, data=request.data)
+        raw_api_key = get_raw_api_key(request=request)
+        data, status = MLService.create(api_key=api_key, data=request.data, raw_api_key=raw_api_key)
         return Response(data=data, status=status)
