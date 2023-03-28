@@ -94,9 +94,9 @@ class FeuillesService():
             for ticketId in feuille.tickets:
                 tdc = TicketDeCaisse.objects.filter(id=ticketId).first()
                 if tdc:
-                    price = tdc.total()
-                    required = tdc.category.required
-                    table_feuille.add(category=tdc.category.name, name=tdc.shop.name, price=price, date=tdc.date, required=required)
+                    table_feuille.add(
+                        category=tdc.category.name, name=tdc.shop.name, price=tdc.total, date=tdc.date, required=tdc.category.required
+                    )
 
         return table_feuille
 

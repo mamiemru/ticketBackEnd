@@ -27,9 +27,9 @@ class PlotService:
         total_per_day : Dict[str, float] = dict()
         for tdc in tdcs:
             if tdc.date.day in total_per_day:
-                total_per_day[tdc.date.day] += tdc.total()
+                total_per_day[tdc.date.day] += tdc.total
             else:
-                total_per_day[tdc.date.day] = tdc.total()
+                total_per_day[tdc.date.day] = tdc.total
             
         def __v(c):
             return round(c,2) if type(c) == float else c

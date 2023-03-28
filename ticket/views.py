@@ -53,7 +53,13 @@ class ItemArticleCategoryEnumViewSet(viewsets.ModelViewSet):
     permission_classes = [HasAPIKey]
     parser_classes = [JSONParser, FormParser]
     serializer_class = ItemArticleCategoryEnumSerializer
-    queryset = ItemArticleCategoryEnum.objects.all()
+    queryset = ItemArticleCategoryEnum.objects.all()    
+
+class ItemArticleBrandEnumViewSet(viewsets.ModelViewSet):
+    permission_classes = [HasAPIKey]
+    parser_classes = [JSONParser, FormParser]
+    serializer_class = ItemArticleBrandEnumSerializer
+    queryset = ItemArticleBrandEnum.objects.all()
     
 class TicketDeCaisseShopEnumViewSet(viewsets.ModelViewSet):
     permission_classes = [HasAPIKey]
@@ -135,8 +141,8 @@ class ArticleViewSet(viewsets.ModelViewSet):
     
     def list(self, request, format=None):
         api_key = get_api_key(request=request)
-        data, status = ArticleService.list(api_key=api_key, article_item_ident=request.GET)
-        return Response(data, status=status)
+        datas, status = ArticleService.list(api_key=api_key, article_item=request.GET)
+        return Response(datas.data, status=status)
     
 class FeuilleViewSet(viewsets.ModelViewSet):
     permission_classes = [HasAPIKey]

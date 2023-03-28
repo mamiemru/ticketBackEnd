@@ -53,6 +53,12 @@ class ItemArticleGroupEnum(Model):
     def __str__(self):
         return f"ItemArticleGroupEnum(name={self.name})"
     
+class ItemArticleBrandEnum(Model):
+    name = TextField(null=False)
+    
+    def __str__(self):
+        return f"ItemArticleBrandEnum(name={self.name})"
+
 def image_path(instance, filename):
     return f'images/{instance.category}/{filename}'
     
@@ -82,8 +88,10 @@ class AttachementImageTicket(Model):
         return f"AttachementImageTicket(api_key={self.api_key}, category={self.category}, type={self.name}, name={self.name}, img={self.image})"
     
 class ItemArticle(Model):
+    ean13 = TextField(null=False)
     ident = TextField(null=False)
     name = TextField(null=False)
+    brand = ForeignKey(ItemArticleBrandEnum, to_field='id', null=True, on_delete=SET_NULL)
     category = ForeignKey(ItemArticleCategoryEnum, to_field='id', null=True, on_delete=SET_NULL)
     group = ForeignKey(ItemArticleGroupEnum, to_field='id', null=True, default=None, on_delete=SET_NULL)
     attachement = ForeignKey(AttachementImageArticle, to_field='id', null=True, on_delete=SET_NULL)
@@ -97,12 +105,11 @@ class TicketDeCaisse(Model):
     category = ForeignKey(TicketDeCaisseTypeEnum, to_field='id', null=True, on_delete=SET_NULL)
     attachement = ForeignKey(AttachementImageTicket, to_field='id', null=True, on_delete=SET_NULL)
     api_key = ForeignKey(APIKey, on_delete=SET_NULL, null=True)
+    total = FloatField(null=False, default=0.0)
+    type = CharField(null=False, choices=(('ticket', 'Ticket'), ('recepiece', 'Receipiece'), ('facture', 'Facture')), max_length=10)
     
     def __str__(self):
         return f"TicketDeCaisse(api_key={self.api_key}, shop={self.shop}, date={self.date}, category={self.category}, attachement={self.attachement})"
-    
-    def total(self):
-        return round(math.fsum([article.price for article in Article.objects.filter(tdc=self.id)]), 2)
     
     @staticmethod
     def sum_total(articles : List):

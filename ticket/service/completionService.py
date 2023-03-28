@@ -29,7 +29,8 @@ class CompletionService:
             'item_ident': 'item__ident',
             'item_category': 'item__category__name',
             'item_name': 'item__name',
-            'item_group': 'item__group__name'
+            'item_group': 'item__group__name',
+            'item_brand': 'item__brand__name'
         }
         
         datas = {
