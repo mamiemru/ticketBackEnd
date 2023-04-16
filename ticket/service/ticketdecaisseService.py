@@ -42,7 +42,7 @@ class TicketDeCaisseService:
                 tdc_category = TicketDeCaisseTypeEnum.objects.get_or_create(**tdc['category'])[0]
                 
                 tdc_type = tdc['type']
-                tdc_total = tdc['total']
+                tdc_total = round(tdc['total'], 2)
                 
                 if not tdc_category or not tdc_shop or not tdc_date or not tdc_type or not tdc_total:
                     return {'error': 'field empty'}, status.HTTP_400_BAD_REQUEST
@@ -67,20 +67,31 @@ class TicketDeCaisseService:
                 
                 print(f"{new_tdc=}")
                 for article in tdc['articles']:
-                    if not article['item'] or not article['item']['category']:
-                        raise Exception("one field is empty")
+                    if not article['item']:
+                        raise Exception("one Item field is empty")
+                    
+                    if tdc_type == 'receipece' and not article['item']['category']:
+                        category = None
+                    else:
+                        name = article['item']['category'].get('name', None)
+                        required = article['item']['category'].get('required', False)
+                        category = ItemArticleCategoryEnum.objects.filter(name=name, required=required).first()
                     
                     print(f"{article=}")
                     
-                    required = article['item']['category'].get('required', False)
-                    category = ItemArticleCategoryEnum.objects.get_or_create(name=article['item']['category']['name'], required=required)[0]
-                    brand = ItemArticleBrandEnum.objects.filter(**article['item']['brand']) if article['item']['brand'] else None
+                    ean13 = article['item'].get('ean13', 0)
+                    
+                    if article['item'].get('brand', {}).get('id', None):
+                        brand = ItemArticleBrandEnum.objects.filter(**article['item']['brand'])
+                    else:
+                        brand = None
+                    
                     group =  ItemArticleGroupEnum.objects.get_or_create(name=article['item']['group']['name'])[0] if article['item']['group'] else None
                     attachement = AttachementImageArticle.objects.filter(id=article['item']['attachement']['id']).first() if article['item']['attachement'] else None
                     
                     item = ItemArticle.objects.get_or_create(
                         name=article['item']['name'], ident=article['item']['ident'], category=category, group=group, attachement=attachement,
-                        ean13=article['item']['ean13'], brand=brand
+                        ean13=ean13, brand=brand
                     )
                     
                     tdc_article = Article( api_key=api_key, tdc=new_tdc[0], remise=article['remise'], quantity=article['quantity'], price=article['price'], item=item[0] )

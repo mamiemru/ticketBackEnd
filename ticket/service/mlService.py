@@ -28,7 +28,7 @@ class MLService:
                 try:
                     minioModel = AttachementImageTicket(api_key=api_key, name=image.name, type=typ, image=image)
                     minioModel.save()
-                except FileExistsError as e:
+                except FileExistsError:
                     return None, status.HTTP_409_CONFLICT
                 
             try:
