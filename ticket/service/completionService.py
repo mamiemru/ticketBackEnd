@@ -16,8 +16,8 @@ from rest_framework_api_key.models import APIKey
 class CompletionService:
     
     @staticmethod
-    def get(api_key, shop):
-        shopObj = TicketDeCaisseShopEnum.objects.filter(name=shop).first()
+    def get(api_key, shop_id: int):
+        shopObj = TicketDeCaisseShopEnum.objects.get(id=shop_id)
         
         if not shopObj:
             return None, status.HTTP_404_NOT_FOUND

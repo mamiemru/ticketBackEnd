@@ -53,7 +53,7 @@ urlpatterns = [
     path('feuille/monthly/<int:feuille_id>/plot/', PlotMonthGraph.as_view({'get': 'plotM'})),
     path('feuille/monthly/<int:feuille_id>/plot/shop/', PlotMonthGraph.as_view({'get': 'plotS'})),
     path('completion/changed/', CompletionChangedViewSet.as_view()),
-    path('completion/changed/<str:shop>/', CompletionChangedShopViewSet.as_view()),
+    path('completion/changed/<int:shop_id>/', CompletionChangedShopViewSet.as_view()),
     path('completion/changed/<str:shop>/article/item/<str:ident>/', CompletionChangedArticleItemIdentViewSet.as_view()),
     path('attachements/<str:category>/<str:filename>/', Attachements.as_view({ 'get': 'retrieve' })),
     path('attachements/', Attachements.as_view({ 'post': 'create' })),

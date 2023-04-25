@@ -192,9 +192,9 @@ class CompletionChangedViewSet(APIView):
 class CompletionChangedShopViewSet(APIView):
     permission_classes = [HasAPIKey]
     
-    def get(self, request, shop, format=None):
+    def get(self, request, shop_id: int, format=None):
         api_key = get_api_key(request=request)
-        data, status = CompletionService.get(api_key=api_key, shop=shop)
+        data, status = CompletionService.get(api_key=api_key, shop_id=shop_id)
         return Response(data=data, status=status)
     
 class CompletionChangedArticleItemIdentViewSet(APIView):

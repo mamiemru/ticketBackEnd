@@ -30,12 +30,12 @@ class TicketDeCaisseService:
                 tdc_date = DateService.dateStrToDateEnglishDateFormat(tdc['date'])
                 print(f"{tdc_date=}")
                 tdc_shop : TicketDeCaisseShopEnum = TicketDeCaisseShopEnum(**tdc['shop'])
-                if tdc_shop.ident and tdc_shop.id:
+                if tdc_shop.valide and tdc_shop.id:
                     tdc_shop = TicketDeCaisseShopEnum.objects.filter(
                         id=tdc_shop.id, ident=tdc_shop.ident, name=tdc_shop.name, city=tdc_shop.city, localisation=tdc_shop.localisation
                     ).first()
                 else:
-                    tdc_shop.ident = tdc_shop.name
+                    tdc_shop.valide = True
                     tdc_shop.save()
                 
                 print(f"{tdc_shop=}")
@@ -85,16 +85,22 @@ class TicketDeCaisseService:
                         brand = ItemArticleBrandEnum.objects.filter(**article['item']['brand'])
                     else:
                         brand = None
+                        
+                    print("nutnut")
                     
                     group =  ItemArticleGroupEnum.objects.get_or_create(name=article['item']['group']['name'])[0] if article['item']['group'] else None
                     attachement = AttachementImageArticle.objects.filter(id=article['item']['attachement']['id']).first() if article['item']['attachement'] else None
                     
-                    item = ItemArticle.objects.get_or_create(
-                        name=article['item']['name'], ident=article['item']['ident'], category=category, group=group, attachement=attachement,
-                        ean13=ean13, brand=brand
-                    )
+                    ## this db call is still in dabate is ean13 a true valuable id or not?
+                    item = ItemArticle.objects.filter(ident=article['item']['ident']).last()
+                        
+                    if not item:
+                        item = ItemArticle(name=article['item']['name'], ident=article['item']['ident'], 
+                            category=category, group=group, attachement=attachement, ean13=ean13, brand=brand
+                        )
+                        item.save()
                     
-                    tdc_article = Article( api_key=api_key, tdc=new_tdc[0], remise=article['remise'], quantity=article['quantity'], price=article['price'], item=item[0] )
+                    tdc_article = Article( api_key=api_key, tdc=new_tdc[0], remise=article['remise'], quantity=article['quantity'], price=article['price'], item=item )
                     tdc_article.save()
                     
         except Exception as e:

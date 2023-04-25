@@ -43,9 +43,10 @@ class TicketDeCaisseShopEnum(Model):
     city = TextField(null=False)
     postal_code = IntegerField(null=False)
     localisation = TextField(null=False)
+    valide = BooleanField(default=True, null=False)
     
     def __str__(self):
-        return f"TicketDeCaisseShopEnum({self.ident=}, {self.name=}, {self.city=}, {self.postal_code=}, {self.localisation=})"
+        return f"TicketDeCaisseShopEnum({self.ident=}, {self.name=}, {self.city=}, {self.postal_code=}, {self.localisation=}, {self.valide=})"
     
 class ItemArticleGroupEnum(Model):
     name = TextField(null=False)
