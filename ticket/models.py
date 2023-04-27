@@ -22,6 +22,9 @@ from rest_framework_api_key.models import AbstractAPIKey
 from ticket.storage.jpegStorage import JpegStorage
 from ticket.storage.jpegStorage import iso_date_prefix
 
+def image_path(instance, filename):
+    return f'images/{instance.category}/{filename}'
+
 class TicketDeCaisseTypeEnum(Model):
     name = TextField(null=False)
     required = BooleanField(null=False, default=False)
@@ -60,9 +63,6 @@ class ItemArticleBrandEnum(Model):
     def __str__(self):
         return f"ItemArticleBrandEnum(name={self.name})"
 
-def image_path(instance, filename):
-    return f'images/{instance.category}/{filename}'
-    
 class AttachementsImages(Model): 
     name = TextField(max_length=50, null=False)
     category = CharField(null=False, choices = (('ticket', 'Ticket'), ('article', 'Article'), ('icon', 'Icon')), max_length=10)
@@ -108,9 +108,10 @@ class TicketDeCaisse(Model):
     api_key = ForeignKey(APIKey, on_delete=SET_NULL, null=True)
     total = FloatField(null=False, default=0.0)
     type = CharField(null=False, choices=(('ticket', 'Ticket'), ('recepiece', 'Receipiece'), ('facture', 'Facture')), max_length=10)
+    remise = FloatField(null=False, default=0.0)
     
     def __str__(self):
-        return f"TicketDeCaisse(api_key={self.api_key}, shop={self.shop}, date={self.date}, category={self.category}, attachement={self.attachement})"
+        return f"TicketDeCaisse({self.__dict__})"
     
     @staticmethod
     def sum_total(articles : List):

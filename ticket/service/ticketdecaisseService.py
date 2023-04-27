@@ -43,6 +43,7 @@ class TicketDeCaisseService:
                 
                 tdc_type = tdc['type']
                 tdc_total = round(tdc['total'], 2)
+                tdc_remise = tdc.get('remise', 0.0)
                 
                 if not tdc_category or not tdc_shop or not tdc_date or not tdc_type or not tdc_total:
                     return {'error': 'field empty'}, status.HTTP_400_BAD_REQUEST
@@ -58,7 +59,8 @@ class TicketDeCaisseService:
                 
                 print(f"{tdc_attachement=}")
                 new_tdc = TicketDeCaisse.objects.get_or_create(
-                    api_key=api_key, shop=tdc_shop, category=tdc_category, date=tdc_date, attachement=tdc_attachement, type=tdc_type, total=tdc_total
+                    api_key=api_key, shop=tdc_shop, category=tdc_category, date=tdc_date, attachement=tdc_attachement, 
+                    type=tdc_type, total=tdc_total, remise=tdc_remise
                 )
                 
                 if not new_tdc[1]:
@@ -78,15 +80,26 @@ class TicketDeCaisseService:
                         category = ItemArticleCategoryEnum.objects.filter(name=name, required=required).first()
                     
                     print(f"{article=}")
+                    print(f"{article['item']=}")
                     
                     ean13 = article['item'].get('ean13', 0)
                     
-                    if article['item'].get('brand', {}).get('id', None):
-                        brand = ItemArticleBrandEnum.objects.filter(**article['item']['brand'])
+                    print(f"{ean13=}")
+                    
+                    brand = article['item'].get('brand', None)
+                    if brand:
+                        if type(brand) is int:
+                            print(f"brand as id: {brand=}")
+                            brand = ItemArticleBrandEnum.objects.get(pk=brand)
+                        elif 'name' in brand:
+                            print(f"brand as name: {brand['name']=}")
+                            brand = ItemArticleBrandEnum.objects.filter(name=brand['name']).first()
+                        else:
+                            brand = None
                     else:
                         brand = None
                         
-                    print("nutnut")
+                    print(f"{brand=}")
                     
                     group =  ItemArticleGroupEnum.objects.get_or_create(name=article['item']['group']['name'])[0] if article['item']['group'] else None
                     attachement = AttachementImageArticle.objects.filter(id=article['item']['attachement']['id']).first() if article['item']['attachement'] else None
