@@ -26,23 +26,46 @@ def iso_date_prefix(_, file_name_ext: str) -> str:
 class JpegStorage(FileSystemStorage):
     
     def __init__(self, bucket_name=None):
-        FileSystemStorage.__init__(self, location=Path("D:\\minio\\ticket"), base_url="http://localhost:9001")
+        FileSystemStorage.__init__(self, 
+            location=settings.JPEG_SHARE_BASE_STORAGE_LOCATION, base_url=settings.JPEG_SHARE_BASE_URL_LOCATION
+        )
         self.bucket_name = bucket_name
     
     def _open(self, name: str, mode="rb") -> File :
+        """ get a file by his name and return a DjangoFileObject
+
+        Args:
+            name (str): file name
+            mode (str, optional): nah. Defaults to "rb".
+
+        Returns:
+            File: DjangoFileObject
+        """
+        
         filepath = Path(self.location) / self.bucket_name / name
         print(f"open({name=} -> {filepath=})")
         return File(open(name, mode))
     
     def _save(self, name: str, content : File):
+        """ Save content parameter as a file system with name as name.
+
+        Args:
+            name (str): file name
+            content (File): DjangoFileobject
+
+        Raises:
+            FileExistsError: if file already exist
+
+        Returns:
+            str: filepath as string
+        """
+        
         filepath = Path(self.location) / self.bucket_name / name
         print(f"_save({name=} -> {filepath.parent} -> {filepath=})")
         
         os.makedirs(filepath.parent, 777, exist_ok=True)
-        try:
-            fd = os.open(filepath, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o666)
-        except FileExistsError as e:
-            raise e
+        fd = os.open(filepath, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o666)
+        
         _file = None
         try:
             locks.lock(fd, locks.LOCK_EX)

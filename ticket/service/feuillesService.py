@@ -83,6 +83,15 @@ class FeuillesService():
 
     @staticmethod
     def feuilleToDataTable(feuille : Feuille) -> TableFeuille:
+        """ Parse a Feuille object to TableFeuille structure
+
+        Args:
+            feuille (Feuille): Feuille
+
+        Returns:
+            TableFeuille: TableFeuille
+        """
+        
         table_feuille : TableFeuille = TableFeuille.empty()
         factures = feuille.factures_json()
         
@@ -101,22 +110,32 @@ class FeuillesService():
         return table_feuille
 
     @staticmethod
-    def feuilleSummary(f: Feuille, t: TableFeuille) -> Dict[str, float]:
+    def feuilleSummary(feuille: Feuille, table_feuille: TableFeuille) -> Dict[str, float]:
+        """ Generate the summary for Feuille and TableFeuille
+
+        Args:
+            f (Feuille): _description_
+            t (TableFeuille): _description_
+
+        Returns:
+            Dict[str, float]: summary as key values
+        """
+        
         ttdepense_v = 0.0
         ttevitable_v = 0.0
         dateService = DateService()
 
-        for _, c in t.items.items():
+        for _, c in table_feuille.items.items():
             c : TableFeuilleCategory = c
             ttdepense_v  += c.header.price
             ttevitable_v += c.header.priceOnlyRequired
 
 
-        ffactures : TableFeuilleCategory = t.items.get('Factures')
+        ffactures : TableFeuilleCategory = table_feuille.items.get('Factures')
         ttfactures = ffactures.header.price if ffactures else 0
 
-        if f.tickets:
-            tdcinf, tdcsup = f.tickets[0], f.tickets[-1]
+        if feuille.tickets:
+            tdcinf, tdcsup = feuille.tickets[0], feuille.tickets[-1]
             datebonreinf = TicketDeCaisse.objects.get(id=tdcinf).date
             datebornesup = TicketDeCaisse.objects.get(id=tdcsup).date
             datebonreinf = dateService.dateToDateObject(dateService.firstDayOfDate(dateService.DateToDateStr(datebonreinf)))

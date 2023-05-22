@@ -1,4 +1,6 @@
 
+from typing import Dict
+
 from rest_framework import status
 from rest_framework_api_key.models import APIKey
 
@@ -13,6 +15,18 @@ class AttachementService:
     
     @staticmethod
     def retrieve(api_key: APIKey, category: str, filename: str):
+        """ Return the first AttachementsImages with name and category respectivly equal to filename and category parameters
+
+        Args:
+            api_key (APIKey): APIKey
+            category (str): category
+            filename (str): filename
+
+        Returns:
+            AttachementsImages, 200: found
+            None, 404: otherwise
+        """
+        
         img = AttachementsImages.objects.filter(name=filename, category=category).first()
         
         if not img:
@@ -22,7 +36,19 @@ class AttachementService:
         return datas.data, status.HTTP_200_OK
     
     @staticmethod
-    def create(api_key: APIKey, data):
+    def create(api_key: APIKey, data: Dict):
+        """ Create and save an ImageObject (Attachement) using name, image and category field from data parameter
+
+        Args:
+            api_key (APIKey): _description_
+            data (Dict): Dict containing name, image and category keys acessible using get method
+
+        Returns:
+            AttachementImageArticle, 201: if category is 'article'
+            AttachementImageTicket, 201: if category is 'ticket'
+            None, 400: otherwise
+        """
+        
         name = data.get('name', None)
         image = data.get('image', None)
         category = data.get('category', None)

@@ -161,3 +161,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 DBBACKUP_STORAGE = 'django.core.files.storage.FileSystemStorage'
 DBBACKUP_STORAGE_OPTIONS = {'location': 'dbbackups'}
+
+## JPEG SHARE CONST for file save in disk
+JPEG_SHARE_BASE_STORAGE_LOCATION = Path("D:\\minio\\ticket")
+JPEG_SHARE_BASE_URL_LOCATION = "http://localhost:9001"

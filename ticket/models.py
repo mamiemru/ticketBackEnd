@@ -6,6 +6,7 @@ import datetime
 from typing import List
 
 from django.db.models import Model
+from django.db.models import TextChoices
 from django.db.models import CASCADE
 from django.db.models import SET_NULL
 from django.db.models import CharField
@@ -40,7 +41,18 @@ class ItemArticleCategoryEnum(Model):
     def __str__(self):
         return f"ItemArticleCategoryEnum(name={self.name}, required={self.required})"
 
+    class Meta:
+        ordering = ["name", "required"]
+        
+class ShopEnseigne(Model):
+    name = TextField(null=False)
+    icon = ImageField(upload_to='enseignes', null=False, storage=JpegStorage(bucket_name='enseignes'))
+    
+    def __str__(self):
+        return f"ShopEnseigne({self.id=}, {self.name=})"
+
 class TicketDeCaisseShopEnum(Model):
+    enseigne = ForeignKey(ShopEnseigne, null=True, default=None, on_delete=SET_NULL)
     ident = TextField(null=False)
     name = TextField(null=True)
     city = TextField(null=False)
@@ -49,7 +61,10 @@ class TicketDeCaisseShopEnum(Model):
     valide = BooleanField(default=True, null=False)
     
     def __str__(self):
-        return f"TicketDeCaisseShopEnum({self.ident=}, {self.name=}, {self.city=}, {self.postal_code=}, {self.localisation=}, {self.valide=})"
+        return f"TicketDeCaisseShopEnum({self.enseigne} {self.ident}, {self.name}, {self.city=}, {self.postal_code=}, {self.localisation=}, {self.valide=})"
+    
+    class Meta:
+        ordering = ["enseigne", "name"]
     
 class ItemArticleGroupEnum(Model):
     name = TextField(null=False)
@@ -57,11 +72,17 @@ class ItemArticleGroupEnum(Model):
     def __str__(self):
         return f"ItemArticleGroupEnum(name={self.name})"
     
+    class Meta:
+        ordering = ["name"]
+
 class ItemArticleBrandEnum(Model):
     name = TextField(null=False)
     
     def __str__(self):
         return f"ItemArticleBrandEnum(name={self.name})"
+
+    class Meta:
+        ordering = ["name"]
 
 class AttachementsImages(Model): 
     name = TextField(max_length=50, null=False)
@@ -75,8 +96,12 @@ class AttachementImageArticle(Model):
     name = TextField(max_length=50, null=False)
     category = CharField(default='article', null=False, editable=False, max_length=7)
     image = ImageField(upload_to='articles', null=False, storage=JpegStorage(bucket_name='article'))
+    
     def __str__(self):
         return f"AttachementImageArticle(category={self.category}, name={self.name}, img={self.image})"
+    
+    class Meta:
+        ordering = ["name"]
 
 class AttachementImageTicket(Model):
     name = TextField(max_length=50, null=False)
@@ -89,16 +114,28 @@ class AttachementImageTicket(Model):
         return f"AttachementImageTicket(api_key={self.api_key}, category={self.category}, type={self.name}, name={self.name}, img={self.image})"
     
 class ItemArticle(Model):
-    ean13 = TextField(null=False)
+    
+    class JunkScoreChoices(TextChoices):
+        NOT_ASSIGNED = 0, ("No Value")
+        GREEN = 1, ("OK")
+        ORANGE = 2, ("COULD BE AVOIDED")
+        RED = 3, ("SHOULD BE AVOIDED")
+        BLACK = 4, ("MUST BE AVOIDED")
+    
+    ean13 = TextField(null=True)
     ident = TextField(null=False)
     name = TextField(null=False)
-    brand = ForeignKey(ItemArticleBrandEnum, to_field='id', null=True, on_delete=SET_NULL)
-    category = ForeignKey(ItemArticleCategoryEnum, to_field='id', null=True, on_delete=SET_NULL)
+    junkscore = CharField(null=True, max_length=1, choices=JunkScoreChoices.choices, default=JunkScoreChoices.NOT_ASSIGNED)
+    brand = ForeignKey(ItemArticleBrandEnum, to_field='id', null=True, default=None, on_delete=SET_NULL)
+    category = ForeignKey(ItemArticleCategoryEnum, to_field='id', null=True, default=None, on_delete=SET_NULL)
     group = ForeignKey(ItemArticleGroupEnum, to_field='id', null=True, default=None, on_delete=SET_NULL)
-    attachement = ForeignKey(AttachementImageArticle, to_field='id', null=True, on_delete=SET_NULL)
+    attachement = ForeignKey(AttachementImageArticle, to_field='id', default=None, null=True, on_delete=SET_NULL)
     
     def __str__(self):
-        return f"ItemArticle(id={self.id}, ident={self.ident}, name={self.name}, category={self.category}, group={self.group})"
+        return f"ItemArticle(id={self.id} #{self.ean13} ident={self.ident}, brand={self.brand}, name={self.name}, category={self.category}, group={self.group})"
+    
+    class Meta:
+        ordering = ["ident"]
         
 class TicketDeCaisse(Model):
     shop = ForeignKey(TicketDeCaisseShopEnum, on_delete=SET_NULL, null=True)
@@ -155,6 +192,18 @@ class Factures(Model):
     def __str__(self):
         return f"Factures(api_key={self.api_key}, {self.datas=})"
     
+class ItemArticleToGS1(Model):
+    shop = ForeignKey(TicketDeCaisseShopEnum, on_delete=SET_NULL, null=True)
+    enseigne = ForeignKey(ShopEnseigne, on_delete=SET_NULL, null=True)
+    ean13 = TextField(null=False, unique=False, default=None)
+    ident = TextField(null=False, unique=True)
+    
+    def __str__(self):
+        return f"ItemArticleToGS1(id={self.id} #{self.ean13} ident={self.ident}, {self.enseigne})"
+    
+    class Meta:
+        ordering = ["id"]
+
 ## ====================================================================================================
 ##
 ##  API KEYS MODELS

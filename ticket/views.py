@@ -89,8 +89,8 @@ class ItemArticleViewSet(ListModelMixin, RetrieveModelMixin, UpdateModelMixin, v
     
     def update(self, request, pk, format=None):
         api_key = get_api_key(request=request)
-        datas, status = ItemArticleService.update(api_key=api_key, item_article=request.data, pk=pk)
-        return Response(data=datas.data, status=status)
+        datas = ItemArticleService.update(api_key=api_key, item_article=request.data, pk=pk)
+        return Response(data=datas.data, status=status.HTTP_200_OK)
     
 class ItemArticleFilterViewSet(ListModelMixin, viewsets.GenericViewSet):
     permission_classes = [HasAPIKey]
@@ -101,8 +101,8 @@ class ItemArticleFilterViewSet(ListModelMixin, viewsets.GenericViewSet):
     
     def list(self, request, format=None):
         api_key = get_api_key(request=request)
-        data, status = ItemArticleService.list(api_key=api_key, item_article=request.data)
-        return Response(data=data, status=status)
+        data = ItemArticleService.list(api_key=api_key, item_article=request.data)
+        return Response(data=data, status=status.HTTP_200_OK)
     
 class TicketDeCaisseViewSet(viewsets.ModelViewSet):
     permission_classes = [HasAPIKey]
@@ -194,15 +194,15 @@ class CompletionChangedShopViewSet(APIView):
     
     def get(self, request, shop_id: int, format=None):
         api_key = get_api_key(request=request)
-        data, status = CompletionService.get(api_key=api_key, shop_id=shop_id)
+        data, status = CompletionService.get_changed_shop(api_key=api_key, shop_id=shop_id)
         return Response(data=data, status=status)
     
 class CompletionChangedArticleItemIdentViewSet(APIView):
     permission_classes = [HasAPIKey]
     
-    def get(self, request, shop, ident, format=None):
+    def get(self, request, shop_name, item_article_ident, format=None):
         api_key = get_api_key(request=request)
-        data, status = CompletionService.get2(api_key=api_key, shop=shop, ident=ident)
+        data, status = CompletionService.get_changed_item_article(api_key=api_key, shop_name=shop_name, item_article_ident=item_article_ident)
         return Response(data=data, status=status)
     
 class PlotMonthGraph(viewsets.ViewSet):

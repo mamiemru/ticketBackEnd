@@ -18,7 +18,13 @@ class ItemArticleBrandEnumSerializer(serializers.ModelSerializer):
         model = ItemArticleBrandEnum
         fields = '__all__'
         
+class ShopEnseigneSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ShopEnseigne
+        fields = '__all__'
+        
 class TicketDeCaisseShopEnumSerializer(serializers.ModelSerializer):
+    enseigne = ShopEnseigneSerializer()
     class Meta:
         model = TicketDeCaisseShopEnum
         fields = '__all__'
@@ -115,9 +121,3 @@ class CompletionChangedSerilizer(serializers.Serializer):
     class Meta:
         fields = '__all__'
         
-    def get_shops(self, obj):
-        return TicketDeCaisseShopEnumSerializer(TicketDeCaisseShopEnum.objects.all(), many=True)
-    
-    def get_categories(self, obj):
-        return TicketDeCaisseTypeEnumSerializer(TicketDeCaisseTypeEnum.objects.all(), many=True)
-    

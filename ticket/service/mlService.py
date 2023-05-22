@@ -26,18 +26,18 @@ class MLService:
             
             if not check_already_exist:
                 try:
-                    minioModel = AttachementImageTicket(api_key=api_key, name=image.name, type=typ, image=image)
-                    minioModel.save()
+                    attachement_object = AttachementImageTicket(api_key=api_key, name=image.name, type=typ, image=image)
+                    attachement_object.save()
                 except FileExistsError:
                     return None, status.HTTP_409_CONFLICT
                 
             try:
-                minioModel = AttachementImageTicket.objects.get(api_key=api_key, name=image.name)
+                attachement_object = AttachementImageTicket.objects.get(api_key=api_key, name=image.name)
             except:
                 return None, status.HTTP_409_CONFLICT
             else:        
                 datas = requests.post(
-                    f"http://localhost:8001/to_ticket_de_caisse/{minioModel.id}/",
+                    f"http://localhost:8001/to_ticket_de_caisse/{attachement_object.id}/",
                     headers={ 
                         'Content-Type': 'application/json',  
                         'Authorization': f'Api-Key {raw_api_key}'
@@ -49,6 +49,6 @@ class MLService:
                 if datas.status_code == status.HTTP_403_FORBIDDEN:
                     return None, status.HTTP_403_FORBIDDEN
                 
-                return None, status.HTTP_400_BAD_REQUEST    
-        else:
-            return category, status.HTTP_400_BAD_REQUEST     
+                return None, status.HTTP_400_BAD_REQUEST
+        
+        return category, status.HTTP_400_BAD_REQUEST     

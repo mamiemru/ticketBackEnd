@@ -1,4 +1,6 @@
 
+from typing import Dict
+
 from rest_framework import status
 from rest_framework_api_key.models import APIKey
 
@@ -12,7 +14,18 @@ from ticket.serializers import ItemArticleSerializer
 class ItemArticleService:
     
     @staticmethod
-    def update(api_key: APIKey, item_article, pk) -> ItemArticleSerializer:
+    def update(api_key: APIKey, item_article: Dict, pk: str) -> ItemArticleSerializer:
+        """ Update ItemArticle object using item_article parameter and pk as ItemArticle.id
+
+        Args:
+            api_key (APIKey): APIKey
+            item_article (Dict): Dict with ItemArticle fields as key that can be called using brakets
+            pk (str): The id of the updated ItemArticle
+
+        Returns:
+            ItemArticle, 200: if ok
+        """
+        
         required = item_article['category'].get('required', False)
         category = ItemArticleCategoryEnum.objects.get_or_create(name=item_article['category']['name'], required=required)[0]
         group =  ItemArticleGroupEnum.objects.get_or_create(name=item_article['group']['name'])[0] if item_article['group'] else None
@@ -26,10 +39,19 @@ class ItemArticleService:
         item.attachement = attachement
         item.save()
         
-        return ItemArticleSerializer(item), status.HTTP_200_OK
+        return ItemArticleSerializer(item)
     
     @staticmethod
-    def list(api_key: APIKey, item_article):
+    def list(api_key: APIKey, item_article: Dict):
+        """ List all ItemArticle that match available non null item_article fields
+
+        Args:
+            api_key (APIKey): APIKey
+            item_article (Dict): Dict of keys that match with Article Object
+
+        Returns:
+            Dict: with 'results' keys
+        """
         
         ident = item_article.get('item', {}).get('ident', None)
         category = item_article.get('item', {}).get('category', {}).get('name', None)
@@ -53,4 +75,4 @@ class ItemArticleService:
         itemArticles = ItemArticle.objects.filter(id__in=itemArticles_ids).all()
         datas = ItemArticleSerializer(itemArticles, many=True)
         
-        return {"results": datas.data}, status.HTTP_200_OK
+        return {"results": datas.data}

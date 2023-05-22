@@ -8,6 +8,7 @@ from ticket.service.dateService import DateService
 
 from ticket.models import Article
 from ticket.models import ItemArticle
+from ticket.models import ShopEnseigne
 from ticket.models import TicketDeCaisse
 from ticket.models import ItemArticleBrandEnum
 from ticket.models import ItemArticleGroupEnum
@@ -23,13 +24,37 @@ class TicketDeCaisseService:
     
     @staticmethod
     def create(api_key: APIKey, tdc):
+        """ Perform checks and save a new TicketDeCaisse.
+            For now, Any ItemArticles can be overwritten.
+
+        Args:
+            api_key (APIKey): APIKey
+            tdc (Dict): json serialized TicketDeCaisse
+
+        Raises:
+            Exception, 500: consistancy errors
+
+        Returns:
+            TicketDeCaisse, 201: tdc is succesfully saved
+            Dict, 400: see 'error' key
+        """
         
         new_tdcId = None
         try:
             with transaction.atomic():
+                
                 tdc_date = DateService.dateStrToDateEnglishDateFormat(tdc['date'])
                 print(f"{tdc_date=}")
+                
+                tdc_shop_enseigne = tdc['shop'].pop('enseigne')
+                if tdc_shop_enseigne:
+                    tdc_shop_enseigne = ShopEnseigne(**tdc_shop_enseigne)
+                else:
+                    tdc_shop_enseigne = None
+                print(f"{tdc_shop_enseigne=}")
+                
                 tdc_shop : TicketDeCaisseShopEnum = TicketDeCaisseShopEnum(**tdc['shop'])
+                tdc_shop.enseigne = tdc_shop_enseigne
                 if tdc_shop.valide and tdc_shop.id:
                     tdc_shop = TicketDeCaisseShopEnum.objects.filter(
                         id=tdc_shop.id, ident=tdc_shop.ident, name=tdc_shop.name, city=tdc_shop.city, localisation=tdc_shop.localisation
@@ -37,9 +62,10 @@ class TicketDeCaisseService:
                 else:
                     tdc_shop.valide = True
                     tdc_shop.save()
-                
                 print(f"{tdc_shop=}")
+                
                 tdc_category = TicketDeCaisseTypeEnum.objects.get_or_create(**tdc['category'])[0]
+                print(f"{tdc_category=}")
                 
                 tdc_type = tdc['type']
                 tdc_total = round(tdc['total'], 2)
@@ -48,7 +74,7 @@ class TicketDeCaisseService:
                 if not tdc_category or not tdc_shop or not tdc_date or not tdc_type or not tdc_total:
                     return {'error': 'field empty'}, status.HTTP_400_BAD_REQUEST
                 
-                print(f"{tdc_category=}")
+                
                 if tdc['attachement']:
                     if 'id' in tdc['attachement']:
                         tdc_attachement = AttachementImageTicket.objects.filter(id=tdc['attachement']['id']).first()
@@ -56,8 +82,8 @@ class TicketDeCaisseService:
                         tdc_attachement = AttachementImageTicket.objects.filter(**tdc['attachement']).first()
                 else:
                     tdc_attachement = None
-                
                 print(f"{tdc_attachement=}")
+                
                 new_tdc = TicketDeCaisse.objects.get_or_create(
                     api_key=api_key, shop=tdc_shop, category=tdc_category, date=tdc_date, attachement=tdc_attachement, 
                     type=tdc_type, total=tdc_total, remise=tdc_remise
@@ -66,8 +92,8 @@ class TicketDeCaisseService:
                 if not new_tdc[1]:
                     raise Exception("Ticket de caisse already exists")
                 new_tdcId : int = new_tdc[0].id
-                
                 print(f"{new_tdc=}")
+                
                 for article in tdc['articles']:
                     if not article['item']:
                         raise Exception("one Item field is empty")
@@ -83,7 +109,6 @@ class TicketDeCaisseService:
                     print(f"{article['item']=}")
                     
                     ean13 = article['item'].get('ean13', 0)
-                    
                     print(f"{ean13=}")
                     
                     brand = article['item'].get('brand', None)
@@ -98,7 +123,6 @@ class TicketDeCaisseService:
                             brand = None
                     else:
                         brand = None
-                        
                     print(f"{brand=}")
                     
                     group =  ItemArticleGroupEnum.objects.get_or_create(name=article['item']['group']['name'])[0] if article['item']['group'] else None
@@ -111,6 +135,17 @@ class TicketDeCaisseService:
                         item = ItemArticle(name=article['item']['name'], ident=article['item']['ident'], 
                             category=category, group=group, attachement=attachement, ean13=ean13, brand=brand
                         )
+                        item.save()
+                        
+                    ## only exist in order to overwrite fields if empty/null/0
+                    if not item.ean13 and ean13:
+                        item.ean13 = ean13
+                        item.save()
+                    if not item.attachement and attachement:
+                        item.attachement = attachement
+                        item.save()
+                    if not item.brand and brand:
+                        item.brand = brand
                         item.save()
                     
                     tdc_article = Article( api_key=api_key, tdc=new_tdc[0], remise=article['remise'], quantity=article['quantity'], price=article['price'], item=item )

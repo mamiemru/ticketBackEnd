@@ -1,4 +1,6 @@
 
+from typing import Dict
+
 from rest_framework import status
 from rest_framework_api_key.models import APIKey
 
@@ -8,7 +10,18 @@ from ticket.serializers import ArticleSerializer
 class ArticleService:
     
     @staticmethod
-    def list(api_key: APIKey, article_item):
+    def list(api_key: APIKey, article_item: Dict):
+        """ Retrieve all Articles wich had the same item_article as the parameter article_item
+
+        Args:
+            api_key (APIKey): APIKey
+            article_item (Dict): object with 'ident' as key callable with get method
+
+        Returns:
+            List[ArticleSerializer], 200: found
+            None, 404: otherwise
+        """
+        
         article_item_ident = article_item.get('ident', None)
         
         if article_item_ident is None:
