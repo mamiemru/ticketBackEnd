@@ -142,7 +142,21 @@ class ArticleViewSet(viewsets.ModelViewSet):
     def list(self, request, format=None):
         api_key = get_api_key(request=request)
         datas, status = ArticleService.list(api_key=api_key, article_item=request.GET)
-        return Response(datas.data, status=status)
+        if datas:
+            return Response(datas.data, status=status)
+        return Response(datas, status=status)
+    
+class ArticleViewSetEan13(viewsets.ModelViewSet):
+    permission_classes = [HasAPIKey]
+    serializer_class = ArticleSerializer
+    queryset = Article.objects.all()
+    
+    def retrieve(self, request, code, format=None):
+        api_key = get_api_key(request=request)
+        datas, status = ArticleService.retrieve_by_ean13(api_key=api_key, code=code)
+        if datas:
+            return Response(datas.data, status=status)
+        return Response(datas, status=status)
     
 class FeuilleViewSet(viewsets.ModelViewSet):
     permission_classes = [HasAPIKey]

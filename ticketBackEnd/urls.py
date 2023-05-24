@@ -44,6 +44,7 @@ urlpatterns = [
     path('ticket_de_caisse/last_n/<int:last_n>/', TicketDeCaisseViewSet.as_view({'get': 'list'})),
     path('ticket_de_caisse/article/', ArticleViewSet.as_view({'get': 'list', 'post': 'create'})),
     path('ticket_de_caisse/article/<str:pk>/', ArticleViewSet.as_view({'get': 'retrieve', 'delete': 'destroy', 'put': 'update'})),
+    path('ticket_de_caisse/article/ean13/<str:code>', ArticleViewSetEan13.as_view({'get': 'retrieve'})),
     path('ticket_de_caisse/', TicketDeCaisseViewSetCustomParser.as_view({'post': 'create'})),
     path('ticket_de_caisse/<str:pk>/', TicketDeCaisseViewSet.as_view({'get': 'retrieve', 'delete': 'destroy'})),
     path('feuille/', FeuilleViewSet.as_view({'get': 'list', 'post': 'create'})),

@@ -33,3 +33,28 @@ class ArticleService:
             return None, status.HTTP_404_NOT_FOUND
         
         return ArticleSerializer(articles, many=True), status.HTTP_200_OK
+    
+    @staticmethod
+    def retrieve_by_ean13(api_key: APIKey, code: str):
+        """ Retrieve the last Article wich match with ean13=code
+
+        Args:
+            api_key (APIKey): APIKey
+            code (str): str
+
+        Returns:
+            ArticleSerializer, 200: found
+            None, 404: otherwise
+        """
+        
+        article = Article.objects.filter(item__ean13=code).last()
+        
+        if not article:
+            return None, status.HTTP_404_NOT_FOUND
+        
+        article.quantity = 1
+        article.remise = 0
+        article.api_key = api_key
+        article.tdc = None
+        
+        return ArticleSerializer(article), status.HTTP_200_OK
