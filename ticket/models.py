@@ -33,6 +33,10 @@ class TicketDeCaisseTypeEnum(Model):
     
     def __str__(self):
         return f"TicketDeCaisseTypeEnum(name={self.name}, required={self.required})"
+    
+    def get_or_create_tdc_type_by_args(kwargs):
+        print(f"TicketDeCaisseTypeEnum.get_or_create_tdc_type_by_args({kwargs=})")
+        return TicketDeCaisseTypeEnum.objects.get_or_create(**kwargs)[0]
         
 class ItemArticleCategoryEnum(Model):
     name = TextField(null=False)
@@ -43,6 +47,9 @@ class ItemArticleCategoryEnum(Model):
 
     class Meta:
         ordering = ["name", "required"]
+        
+    def get_ia_category_by_name_or_none(name):
+        return ItemArticleCategoryEnum.objects.filter(name=name).last() if name else None
         
 class ShopEnseigne(Model):
     name = TextField(null=False)
@@ -74,6 +81,10 @@ class ItemArticleGroupEnum(Model):
     
     class Meta:
         ordering = ["name"]
+        
+    @staticmethod
+    def get_group_by_name_or_none(group_object):
+        return ItemArticleGroupEnum.objects.get_or_create(name=group_object['name'])[0] if group_object else None
 
 class ItemArticleBrandEnum(Model):
     name = TextField(null=False)
@@ -83,6 +94,9 @@ class ItemArticleBrandEnum(Model):
 
     class Meta:
         ordering = ["name"]
+        
+    def get_brand_by_name_or_none(brand_object):
+        return ItemArticleBrandEnum.objects.get_or_create(name=brand_object['name'])[0] if brand_object else None
 
 class AttachementsImages(Model): 
     name = TextField(max_length=50, null=False)
@@ -102,6 +116,10 @@ class AttachementImageArticle(Model):
     
     class Meta:
         ordering = ["name"]
+        
+    @staticmethod
+    def get_attachement_by_id_or_none(attachement):
+        return AttachementImageArticle.objects.filter(id=attachement['id']).first() if attachement else None
 
 class AttachementImageTicket(Model):
     name = TextField(max_length=50, null=False)

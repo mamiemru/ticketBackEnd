@@ -1,12 +1,12 @@
 
 from typing import Dict
 
-from rest_framework import status
 from rest_framework_api_key.models import APIKey
 
 from ticket.models import Article
 from ticket.models import ItemArticle
 from ticket.models import ItemArticleGroupEnum
+from ticket.models import ItemArticleBrandEnum
 from ticket.models import AttachementImageArticle
 from ticket.models import ItemArticleCategoryEnum
 from ticket.serializers import ItemArticleSerializer
@@ -28,12 +28,14 @@ class ItemArticleService:
         
         required = item_article['category'].get('required', False)
         category = ItemArticleCategoryEnum.objects.get_or_create(name=item_article['category']['name'], required=required)[0]
-        group =  ItemArticleGroupEnum.objects.get_or_create(name=item_article['group']['name'])[0] if item_article['group'] else None
+        brand =  ItemArticleBrandEnum.get_brand_by_name_or_none(item_article['brand'])
+        group =  ItemArticleGroupEnum.get_group_by_name_or_none(item_article['group'])
         attachement = AttachementImageArticle.objects.filter(id=item_article['attachement']['id']).first() if item_article['attachement'] else None
         
         item = ItemArticle.objects.get(id=item_article['id'])
         item.name = item_article['name']
         item.ident = item_article['ident']
+        item.brand = brand
         item.category = category
         item.group = group
         item.attachement = attachement

@@ -1,4 +1,8 @@
 
+from typing import Dict
+from typing import Tuple
+from typing import Union
+
 from django.db import transaction
 
 from rest_framework import status
@@ -10,6 +14,7 @@ from ticket.models import Article
 from ticket.models import ItemArticle
 from ticket.models import ShopEnseigne
 from ticket.models import TicketDeCaisse
+from ticket.models import ItemArticleToGS1
 from ticket.models import ItemArticleBrandEnum
 from ticket.models import ItemArticleGroupEnum
 from ticket.models import AttachementImageTicket
@@ -21,6 +26,44 @@ from ticket.models import AttachementImageArticle
 from ticket.serializers import TicketDeCaisseSerializer
 
 class TicketDeCaisseService:
+    
+    @staticmethod
+    def __get_tdc_date(date) -> str:
+        return DateService.dateStrToDateEnglishDateFormat(date)
+    
+    @staticmethod
+    def __process_tdc_shop_and_enseigne_or_none(in_request_tdc_shop: Dict[str, any]) -> TicketDeCaisseShopEnum:
+        tdc_shop_enseigne = in_request_tdc_shop.pop('enseigne') ## pop the enseigne key is mandatory here
+        
+        tdc_shop : TicketDeCaisseShopEnum = TicketDeCaisseShopEnum(**in_request_tdc_shop)
+        tdc_shop.enseigne = ShopEnseigne(**tdc_shop_enseigne) if tdc_shop_enseigne else None
+        
+        if tdc_shop.valide and tdc_shop.id:
+            tdc_shop = TicketDeCaisseShopEnum.objects.filter(
+                id=tdc_shop.id, ident=tdc_shop.ident, name=tdc_shop.name, city=tdc_shop.city, localisation=tdc_shop.localisation
+            ).first()
+        else:
+            tdc_shop.valide = True
+            tdc_shop.save()
+        return tdc_shop
+    
+    @staticmethod
+    def __get_tdc_attachement_by_id_or_args_or_none(in_request_tdc_attachement: Dict[str, str]) -> Union[AttachementImageTicket, None]:
+        if in_request_tdc_attachement:
+            if 'id' in in_request_tdc_attachement:
+                return AttachementImageTicket.objects.get(id=in_request_tdc_attachement['id'])
+            else:
+                return AttachementImageTicket.objects.filter(**in_request_tdc_attachement).first()
+        return None
+    
+    @staticmethod
+    def __get_brand_by_any_way_or_none(in_request_brand: Dict[str, any]) -> Union[ItemArticleBrandEnum, None]:
+        if in_request_brand:
+            if type(in_request_brand) is int:
+                return ItemArticleBrandEnum.objects.get(pk=in_request_brand)
+            elif 'name' in in_request_brand:
+                return ItemArticleBrandEnum.get_brand_by_name_or_none(in_request_brand)
+        return None
     
     @staticmethod
     def create(api_key: APIKey, tdc):
@@ -43,96 +86,50 @@ class TicketDeCaisseService:
         try:
             with transaction.atomic():
                 
-                tdc_date = DateService.dateStrToDateEnglishDateFormat(tdc['date'])
-                print(f"{tdc_date=}")
+                tdc_date : str = TicketDeCaisseService.__get_tdc_date(tdc['date'])
+                tdc_shop : TicketDeCaisseShopEnum = TicketDeCaisseService.__process_tdc_shop_and_enseigne_or_none(tdc['shop'])
+                tdc_category : TicketDeCaisseTypeEnum = TicketDeCaisseTypeEnum.get_or_create_tdc_type_by_args(tdc['category'])
+                tdc_shop_enseigne : ShopEnseigne = tdc_shop.enseigne
                 
-                tdc_shop_enseigne = tdc['shop'].pop('enseigne')
-                if tdc_shop_enseigne:
-                    tdc_shop_enseigne = ShopEnseigne(**tdc_shop_enseigne)
-                else:
-                    tdc_shop_enseigne = None
-                print(f"{tdc_shop_enseigne=}")
-                
-                tdc_shop : TicketDeCaisseShopEnum = TicketDeCaisseShopEnum(**tdc['shop'])
-                tdc_shop.enseigne = tdc_shop_enseigne
-                if tdc_shop.valide and tdc_shop.id:
-                    tdc_shop = TicketDeCaisseShopEnum.objects.filter(
-                        id=tdc_shop.id, ident=tdc_shop.ident, name=tdc_shop.name, city=tdc_shop.city, localisation=tdc_shop.localisation
-                    ).first()
-                else:
-                    tdc_shop.valide = True
-                    tdc_shop.save()
-                print(f"{tdc_shop=}")
-                
-                tdc_category = TicketDeCaisseTypeEnum.objects.get_or_create(**tdc['category'])[0]
-                print(f"{tdc_category=}")
-                
-                tdc_type = tdc['type']
-                tdc_total = round(tdc['total'], 2)
-                tdc_remise = tdc.get('remise', 0.0)
+                tdc_type : str = tdc['type']
+                tdc_total : float = round(tdc['total'], 2)
+                tdc_remise : float = tdc.get('remise', 0.0)
                 
                 if not tdc_category or not tdc_shop or not tdc_date or not tdc_type or not tdc_total:
-                    return {'error': 'field empty'}, status.HTTP_400_BAD_REQUEST
+                    return {'error': 'mandatory field empty'}, status.HTTP_400_BAD_REQUEST
                 
-                
-                if tdc['attachement']:
-                    if 'id' in tdc['attachement']:
-                        tdc_attachement = AttachementImageTicket.objects.filter(id=tdc['attachement']['id']).first()
-                    else:
-                        tdc_attachement = AttachementImageTicket.objects.filter(**tdc['attachement']).first()
-                else:
-                    tdc_attachement = None
-                print(f"{tdc_attachement=}")
-                
-                new_tdc = TicketDeCaisse.objects.get_or_create(
+                tdc_attachement = TicketDeCaisseService.__get_tdc_attachement_by_id_or_args_or_none(tdc['attachement'])
+                new_tdc, new_tdc_added = TicketDeCaisse.objects.get_or_create(
                     api_key=api_key, shop=tdc_shop, category=tdc_category, date=tdc_date, attachement=tdc_attachement, 
                     type=tdc_type, total=tdc_total, remise=tdc_remise
                 )
                 
-                if not new_tdc[1]:
-                    raise Exception("Ticket de caisse already exists")
-                new_tdcId : int = new_tdc[0].id
-                print(f"{new_tdc=}")
+                new_tdcId : int = new_tdc.id
+                if not new_tdc_added or not new_tdcId:
+                    return {'error': 'An other TDC with same constraints already exist' }, status.HTTP_409_CONFLICT
                 
                 for article in tdc['articles']:
+                    ## start for one article ##
                     if not article['item']:
                         raise Exception("one Item field is empty")
                     
+                    ident = article['item']['ident']
+                    
+                    ''' wtf those lines?
                     if tdc_type == 'receipece' and not article['item']['category']:
                         category = None
                     else:
-                        name = article['item']['category'].get('name', None)
-                        required = article['item']['category'].get('required', False)
-                        category = ItemArticleCategoryEnum.objects.filter(name=name, required=required).first()
-                    
-                    print(f"{article=}")
-                    print(f"{article['item']=}")
+                    '''
                     
                     ean13 = article['item'].get('ean13', 0)
-                    print(f"{ean13=}")
-                    
-                    brand = article['item'].get('brand', None)
-                    if brand:
-                        if type(brand) is int:
-                            print(f"brand as id: {brand=}")
-                            brand = ItemArticleBrandEnum.objects.get(pk=brand)
-                        elif 'name' in brand:
-                            print(f"brand as name: {brand['name']=}")
-                            brand = ItemArticleBrandEnum.objects.filter(name=brand['name']).first()
-                        else:
-                            brand = None
-                    else:
-                        brand = None
-                    print(f"{brand=}")
-                    
-                    group =  ItemArticleGroupEnum.objects.get_or_create(name=article['item']['group']['name'])[0] if article['item']['group'] else None
-                    attachement = AttachementImageArticle.objects.filter(id=article['item']['attachement']['id']).first() if article['item']['attachement'] else None
-                    
-                    ## this db call is still in dabate is ean13 a true valuable id or not?
-                    item = ItemArticle.objects.filter(ident=article['item']['ident']).last()
+                    brand = TicketDeCaisseService.__get_brand_by_any_way_or_none(article['item'].get('brand', None))
+                    category = ItemArticleCategoryEnum.get_ia_category_by_name_or_none(article['item']['category'].get('name', None))
+                    group =  ItemArticleGroupEnum.get_group_by_name_or_none(article['item']['group'])
+                    attachement = AttachementImageArticle.get_attachement_by_id_or_none(article['item']['attachement'])
+                    item = ItemArticle.objects.filter(ident=ident).last()
                         
                     if not item:
-                        item = ItemArticle(name=article['item']['name'], ident=article['item']['ident'], 
+                        item = ItemArticle(name=article['item']['name'], ident=ident, 
                             category=category, group=group, attachement=attachement, ean13=ean13, brand=brand
                         )
                         item.save()
@@ -148,8 +145,13 @@ class TicketDeCaisseService:
                         item.brand = brand
                         item.save()
                     
-                    tdc_article = Article( api_key=api_key, tdc=new_tdc[0], remise=article['remise'], quantity=article['quantity'], price=article['price'], item=item )
+                    tdc_article = Article( api_key=api_key, tdc=new_tdc, remise=article['remise'], quantity=article['quantity'], price=article['price'], item=item )
                     tdc_article.save()
+                    
+                    if ean13 and tdc_shop_enseigne and ident and ItemArticleToGS1.objects.filter(ident=ident, ean13=ean13, shop=tdc_shop, enseigne=tdc_shop_enseigne).count == 0:
+                        iags1 = ItemArticleToGS1(ident=ident, ean13=ean13, shop=tdc_shop, enseigne=tdc_shop_enseigne)
+                        iags1.save()
+                    ## end for one article ##
                     
         except Exception as e:
             return {'error': str(e)}, status.HTTP_400_BAD_REQUEST

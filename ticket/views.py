@@ -61,6 +61,12 @@ class ItemArticleBrandEnumViewSet(viewsets.ModelViewSet):
     serializer_class = ItemArticleBrandEnumSerializer
     queryset = ItemArticleBrandEnum.objects.all()
     
+class TicketDeCaisseShopEnseigneEnumViewSet(viewsets.ModelViewSet):
+    permission_classes = [HasAPIKey]
+    parser_classes = [JSONParser, FormParser]
+    serializer_class = ShopEnseigneSerializer
+    queryset = ShopEnseigne.objects.all()
+    
 class TicketDeCaisseShopEnumViewSet(viewsets.ModelViewSet):
     permission_classes = [HasAPIKey]
     parser_classes = [JSONParser, FormParser]

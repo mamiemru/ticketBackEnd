@@ -77,7 +77,7 @@ class TicketDeCaisseSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = TicketDeCaisse
-        fields = ('id', 'shop', 'date', 'category', 'articles', 'total', 'attachement', 'type')
+        fields = ('id', 'shop', 'date', 'category', 'articles', 'total', 'attachement', 'type', 'remise')
 
 class FeuilleSerializer(serializers.ModelSerializer):
     year = serializers.ReadOnlyField()
