@@ -72,6 +72,16 @@ class TicketDeCaisseShopEnum(Model):
     
     class Meta:
         ordering = ["enseigne", "name"]
+        
+    @staticmethod
+    def not_confirmed_tdcshop_object(shop_ident: str):
+        return TicketDeCaisseShopEnum(
+            ident=shop_ident, name=shop_ident, valide=False
+        )
+        
+    @staticmethod
+    def empty_tdcshop_object():
+        return TicketDeCaisseShopEnum(ident=None, valide=False)
     
 class ItemArticleGroupEnum(Model):
     name = TextField(null=False)
@@ -124,12 +134,12 @@ class AttachementImageArticle(Model):
 class AttachementImageTicket(Model):
     name = TextField(max_length=50, null=False)
     category = CharField(default='ticket', null=False, editable=False, max_length=6)
-    type = CharField(null=False, choices = (('ticket', 'Ticket'), ('recepiece', 'Receipiece'), ('facture', 'Facture')), max_length=10)
+    type = CharField(null=True, choices = (('ticket', 'Ticket'), ('recepiece', 'Receipiece'), ('facture', 'Facture'), ('unnammed', 'None')), max_length=10)
     image = ImageField(upload_to=iso_date_prefix, null=False, storage=JpegStorage(bucket_name='ticket'))
     api_key = ForeignKey(APIKey, on_delete=SET_NULL, null=True)
     
     def __str__(self):
-        return f"AttachementImageTicket(api_key={self.api_key}, category={self.category}, type={self.name}, name={self.name}, img={self.image})"
+        return f"AttachementImageTicket(api_key={self.api_key}, category={self.category}, type={self.type}, name={self.name}, img={self.image})"
     
 class ItemArticle(Model):
     
@@ -164,6 +174,7 @@ class TicketDeCaisse(Model):
     total = FloatField(null=False, default=0.0)
     type = CharField(null=False, choices=(('ticket', 'Ticket'), ('recepiece', 'Receipiece'), ('facture', 'Facture')), max_length=10)
     remise = FloatField(null=False, default=0.0)
+    need_to_be_validated = BooleanField(null=False, default=False)
     
     def __str__(self):
         return f"TicketDeCaisse({self.__dict__})"
@@ -221,15 +232,3 @@ class ItemArticleToGS1(Model):
     
     class Meta:
         ordering = ["id"]
-
-## ====================================================================================================
-##
-##  API KEYS MODELS
-##
-## ====================================================================================================
-
-class Profile(Model):
-    name = CharField(max_length=128)
-
-class UserApiKey(AbstractAPIKey):
-    profile = ForeignKey(Profile, on_delete=SET_NULL, null=True, related_name="api_keys")

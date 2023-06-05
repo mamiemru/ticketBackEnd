@@ -163,5 +163,9 @@ DBBACKUP_STORAGE = 'django.core.files.storage.FileSystemStorage'
 DBBACKUP_STORAGE_OPTIONS = {'location': 'dbbackups'}
 
 ## JPEG SHARE CONST for file save in disk
-JPEG_SHARE_BASE_STORAGE_LOCATION = Path("D:\\minio\\ticket")
+JPEG_SHARE_BASE_STORAGE_LOCATION = Path("D:\\minio") / "ticket"
 JPEG_SHARE_BASE_URL_LOCATION = "http://localhost:9001"
+
+## AUTO TDC BATCH CONFIGS
+QUEUE_FOLDER_PATH = Path("D:\\projects") / "balrs" / "ticketBackEnd" / "queue"
+USER_CONFIGURATION = QUEUE_FOLDER_PATH / "USER_CONFIG.conf"

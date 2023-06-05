@@ -8,33 +8,33 @@ from ticket.models import AttachementImageTicket
 class MLService:
     
     @staticmethod
-    def create(api_key: AbstractAPIKey, data : Dict[str, str], raw_api_key: str):
-        image = data.get('image', None)
-        typ = data.get('type', None)
-        category = data.get('category', None)
+    def create(api_key: AbstractAPIKey, datas : Dict[str, str], raw_api_key: str):
+        image = datas.get('image', None)
+        typ = datas.get('type', None)
+        category = datas.get('category', None)
+        
+        print(f"{typ=}, {category=}")
         
         if image is None or category is None:
             return 'image or category is null', status.HTTP_400_BAD_REQUEST
         
         ## TODO update image name in Model and in Minio (use date & user)
         
-        if category == 'ticket':
-            if typ is None:
-                return 'type is null', status.HTTP_400_BAD_REQUEST
+        if category == 'ticket': ## to ensure this is not an article image
             
-            check_already_exist = AttachementImageTicket.objects.filter(api_key=api_key, name=image.name, type=typ).first()
+            check_already_exist = AttachementImageTicket.objects.filter(api_key=api_key, name=image.name).first()
             
             if not check_already_exist:
                 try:
                     attachement_object = AttachementImageTicket(api_key=api_key, name=image.name, type=typ, image=image)
                     attachement_object.save()
                 except FileExistsError:
-                    return None, status.HTTP_409_CONFLICT
+                    return {'error': f'the file {image.name} already exist'}, status.HTTP_409_CONFLICT
                 
             try:
                 attachement_object = AttachementImageTicket.objects.get(api_key=api_key, name=image.name)
             except:
-                return None, status.HTTP_409_CONFLICT
+                return {'error': 'could not get attachement'}, status.HTTP_409_CONFLICT
             else:        
                 datas = requests.post(
                     f"http://localhost:8001/to_ticket_de_caisse/{attachement_object.id}/",
@@ -44,7 +44,12 @@ class MLService:
                     }
                 )
                 if status.HTTP_200_OK <= datas.status_code <= status.HTTP_201_CREATED:
-                    return datas.json(), status.HTTP_201_CREATED
+                    response = datas.json()
+                    
+                    attachement_object.type = response.get('type', attachement_object.type)
+                    attachement_object.save()
+                    
+                    return response, status.HTTP_200_OK
                 
                 if datas.status_code == status.HTTP_403_FORBIDDEN:
                     return None, status.HTTP_403_FORBIDDEN

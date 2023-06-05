@@ -1,4 +1,6 @@
 
+import json
+
 from rest_framework import serializers
 
 from .models import *
@@ -59,7 +61,7 @@ class TicketDeCaisseHeaderSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = TicketDeCaisse
-        fields = ('id', 'shop', 'date', 'category', 'total', 'type')
+        fields = ('id', 'shop', 'date', 'category', 'total', 'type', 'need_to_be_validated')
                
 class ArticleSerializer(serializers.ModelSerializer):
     item = ItemArticleSerializer()
@@ -77,7 +79,7 @@ class TicketDeCaisseSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = TicketDeCaisse
-        fields = ('id', 'shop', 'date', 'category', 'articles', 'total', 'attachement', 'type', 'remise')
+        exclude = ('api_key', )
 
 class FeuilleSerializer(serializers.ModelSerializer):
     year = serializers.ReadOnlyField()
@@ -120,4 +122,3 @@ class CompletionChangedSerilizer(serializers.Serializer):
     
     class Meta:
         fields = '__all__'
-        

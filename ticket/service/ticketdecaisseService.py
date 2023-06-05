@@ -1,3 +1,4 @@
+import json
 
 from typing import Dict
 from typing import Tuple
@@ -29,7 +30,7 @@ class TicketDeCaisseService:
     
     @staticmethod
     def __get_tdc_date(date) -> str:
-        return DateService.dateStrToDateEnglishDateFormat(date)
+        return DateService.dateStrToDateEnglishDateFormat(date) if date else None
     
     @staticmethod
     def __process_tdc_shop_and_enseigne_or_none(in_request_tdc_shop: Dict[str, any]) -> TicketDeCaisseShopEnum:
@@ -45,6 +46,7 @@ class TicketDeCaisseService:
         else:
             tdc_shop.valide = True
             tdc_shop.save()
+        
         return tdc_shop
     
     @staticmethod
@@ -53,7 +55,11 @@ class TicketDeCaisseService:
             if 'id' in in_request_tdc_attachement:
                 return AttachementImageTicket.objects.get(id=in_request_tdc_attachement['id'])
             else:
-                return AttachementImageTicket.objects.filter(**in_request_tdc_attachement).first()
+                attachement = AttachementImageTicket.objects.filter(**in_request_tdc_attachement).first()
+                if not attachement:
+                    attachement = AttachementImageTicket(**in_request_tdc_attachement)
+                    attachement.save()
+                return attachement
         return None
     
     @staticmethod
@@ -66,7 +72,7 @@ class TicketDeCaisseService:
         return None
     
     @staticmethod
-    def create(api_key: APIKey, tdc):
+    def create(api_key: APIKey, tdc: Dict):
         """ Perform checks and save a new TicketDeCaisse.
             For now, Any ItemArticles can be overwritten.
 
@@ -85,7 +91,6 @@ class TicketDeCaisseService:
         new_tdcId = None
         try:
             with transaction.atomic():
-                
                 tdc_date : str = TicketDeCaisseService.__get_tdc_date(tdc['date'])
                 tdc_shop : TicketDeCaisseShopEnum = TicketDeCaisseService.__process_tdc_shop_and_enseigne_or_none(tdc['shop'])
                 tdc_category : TicketDeCaisseTypeEnum = TicketDeCaisseTypeEnum.get_or_create_tdc_type_by_args(tdc['category'])
@@ -94,6 +99,7 @@ class TicketDeCaisseService:
                 tdc_type : str = tdc['type']
                 tdc_total : float = round(tdc['total'], 2)
                 tdc_remise : float = tdc.get('remise', 0.0)
+                tdc_need_to_be_validated = tdc.get('need_to_be_validated', True)
                 
                 if not tdc_category or not tdc_shop or not tdc_date or not tdc_type or not tdc_total:
                     return {'error': 'mandatory field empty'}, status.HTTP_400_BAD_REQUEST
@@ -101,7 +107,7 @@ class TicketDeCaisseService:
                 tdc_attachement = TicketDeCaisseService.__get_tdc_attachement_by_id_or_args_or_none(tdc['attachement'])
                 new_tdc, new_tdc_added = TicketDeCaisse.objects.get_or_create(
                     api_key=api_key, shop=tdc_shop, category=tdc_category, date=tdc_date, attachement=tdc_attachement, 
-                    type=tdc_type, total=tdc_total, remise=tdc_remise
+                    type=tdc_type, total=tdc_total, remise=tdc_remise, need_to_be_validated=tdc_need_to_be_validated
                 )
                 
                 new_tdcId : int = new_tdc.id
@@ -122,20 +128,20 @@ class TicketDeCaisseService:
                     '''
                     
                     ean13 = article['item'].get('ean13', 0)
+                    name = article['item'].get('name', ident)
                     brand = TicketDeCaisseService.__get_brand_by_any_way_or_none(article['item'].get('brand', None))
                     category = ItemArticleCategoryEnum.get_ia_category_by_name_or_none(article['item']['category'].get('name', None))
                     group =  ItemArticleGroupEnum.get_group_by_name_or_none(article['item']['group'])
                     attachement = AttachementImageArticle.get_attachement_by_id_or_none(article['item']['attachement'])
                     item = ItemArticle.objects.filter(ident=ident).last()
                         
+                    print(f"{ident=}, {name=}, {category=} {brand=} {group=}")
                     if not item:
-                        item = ItemArticle(name=article['item']['name'], ident=ident, 
-                            category=category, group=group, attachement=attachement, ean13=ean13, brand=brand
-                        )
+                        item = ItemArticle(name=name, ident=ident, category=category, group=group, attachement=attachement, ean13=ean13, brand=brand)
                         item.save()
                         
                     ## only exist in order to overwrite fields if empty/null/0
-                    if not item.ean13 and ean13:
+                    if (not item.ean13 or item.ean13 == 0) and ean13:
                         item.ean13 = ean13
                         item.save()
                     if not item.attachement and attachement:

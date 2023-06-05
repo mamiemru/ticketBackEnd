@@ -31,7 +31,13 @@ class CompletionService:
         if not shop_object:
             return None, status.HTTP_404_NOT_FOUND
         
-        articlesQuery = Article.objects.filter(api_key=api_key, tdc__shop=shop_object)
+        enseigne_object = shop_object.enseigne
+        
+        if enseigne_object:
+            articles_query = Article.objects.filter(api_key=api_key, tdc__shop__enseigne=enseigne_object)
+        
+        if (not enseigne_object) or articles_query.count == 0:
+            articles_query = Article.objects.filter(api_key=api_key, tdc__shop=shop_object)
         
         data_keys = { 
             'tdc_category': 'tdc__category__name',
@@ -43,7 +49,7 @@ class CompletionService:
         }
         
         datas = {
-            k: [l[v] for l in articlesQuery.values(v).distinct().order_by(v)] for k,v in data_keys.items()
+            k: [l[v] for l in articles_query.values(v).distinct().order_by(v)] for k,v in data_keys.items()
         }
         
         datas['tdc'] = TicketDeCaisseShopEnumSerializer(shop_object).data
@@ -71,10 +77,22 @@ class CompletionService:
         if not shop_object:
             return None, status.HTTP_404_NOT_FOUND
         
-        article = Article.objects.filter(Q(tdc__shop=shop_object), Q(item__ident=item_article_ident), api_key=api_key).last()
+        enseigne_object = shop_object.enseigne
+        
+        if not enseigne_object:
+            q_shop_enseigne = Q(tdc__shop=shop_object)
+        else:
+            q_shop_enseigne = Q(tdc__shop__enseigne=enseigne_object)
+        
+        article = Article.objects.filter(q_shop_enseigne, Q(item__ident=item_article_ident)).last()
         
         if not article:
             return None, status.HTTP_404_NOT_FOUND
             
+        article.remise = .0
+        article.quantity = 1
+        article.tdc = None
+        article.api_key = None
         article.item.attachement = AttachementImageArticle.objects.filter(name=item_article_ident).first()
+        
         return ArticleSerializer(article).data, status.HTTP_200_OK

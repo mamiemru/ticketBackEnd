@@ -73,6 +73,25 @@ class TicketDeCaisseShopEnumViewSet(viewsets.ModelViewSet):
     serializer_class = TicketDeCaisseShopEnumSerializer
     queryset = TicketDeCaisseShopEnum.objects.all()
     
+    def create(self, request, format=None):
+        tdcshop = TicketDeCaisseShopEnum(**request.data)
+        tdcshop.save()
+        datas = TicketDeCaisseShopEnumSerializer(tdcshop)
+        return Response(data=datas.data, status=status.HTTP_201_CREATED)
+    
+    def update(self, request, pk, format=None):
+        tdcshop = TicketDeCaisseShopEnum.objects.get(pk=pk)
+        tdcshop.name = request.data.get('name', tdcshop.name)
+        tdcshop.city = request.data.get('city', tdcshop.city)
+        tdcshop.ident = request.data.get('ident', tdcshop.ident)
+        tdcshop.enseigne = request.data.get('enseigne', tdcshop.enseigne)
+        tdcshop.postal_code = request.data.get('postal_code', tdcshop.postal_code)
+        tdcshop.localisation = request.data.get('localisation', tdcshop.localisation)
+        tdcshop.save()
+        datas = TicketDeCaisseShopEnumSerializer(tdcshop)
+        return Response(data=datas.data, status=status.HTTP_200_OK)
+        
+    
 class TicketDeCaisseLocalisationEnumViewSet(viewsets.ViewSet):
     permission_classes = [HasAPIKey]
     parser_classes = [JSONParser, FormParser]
@@ -262,5 +281,5 @@ class TicketML(viewsets.ModelViewSet):
     def create(self, request, format=None):
         api_key = get_api_key(request=request)
         raw_api_key = get_raw_api_key(request=request)
-        data, status = MLService.create(api_key=api_key, data=request.data, raw_api_key=raw_api_key)
+        data, status = MLService.create(api_key=api_key, datas=request.data, raw_api_key=raw_api_key)
         return Response(data=data, status=status)

@@ -26,6 +26,7 @@ class ItemArticleService:
             ItemArticle, 200: if ok
         """
         
+        ean13 = item_article.get('ean13', 0)
         required = item_article['category'].get('required', False)
         category = ItemArticleCategoryEnum.objects.get_or_create(name=item_article['category']['name'], required=required)[0]
         brand =  ItemArticleBrandEnum.get_brand_by_name_or_none(item_article['brand'])
@@ -39,6 +40,7 @@ class ItemArticleService:
         item.category = category
         item.group = group
         item.attachement = attachement
+        item.ean13 = ean13
         item.save()
         
         return ItemArticleSerializer(item)
