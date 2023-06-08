@@ -46,8 +46,11 @@ class MLService:
                 if status.HTTP_200_OK <= datas.status_code <= status.HTTP_201_CREATED:
                     response = datas.json()
                     
-                    attachement_object.type = response.get('type', attachement_object.type)
-                    attachement_object.save()
+                    print(response)
+                    
+                    if attachement_object.type == 'unnammed':
+                        attachement_object.type = response.get('type', attachement_object.type)
+                        attachement_object.save()
                     
                     return response, status.HTTP_200_OK
                 

@@ -39,7 +39,7 @@ class ItemArticleGroupEnumSerializer(serializers.ModelSerializer):
 class AttachementImageTicketSerializer(serializers.ModelSerializer):
     class Meta:
         model = AttachementImageTicket
-        fields = ('name', 'category', 'type', 'image')
+        fields = ('id', 'name', 'category', 'type', 'image')
         
 class AttachementImageArticleSerializer(serializers.ModelSerializer):
     class Meta:
@@ -122,3 +122,34 @@ class CompletionChangedSerilizer(serializers.Serializer):
     
     class Meta:
         fields = '__all__'
+
+
+class MlAttachementTicketSerializer(serializers.ModelSerializer):
+    attachement = AttachementImageTicketSerializer(read_only=True)
+    tdc = serializers.SerializerMethodField(read_only=True)
+    gcp_datas = serializers.ReadOnlyField()
+    
+    class Meta:
+        model = MLAttachementTicket
+        fields = '__all__'
+        
+    def get_tdc(self, obj):
+        tdc : TicketDeCaisse = TicketDeCaisse.objects.filter(attachement=obj.attachement).last()
+        if not tdc:
+            return None
+        return TicketDeCaisseHeaderSerializer(tdc).data
+
+
+class MlAttachementTicketHeaderSerializer(serializers.ModelSerializer):
+    attachement = AttachementImageTicketSerializer(read_only=True)
+    tdc = serializers.SerializerMethodField(read_only=True)
+    
+    class Meta:
+        model = MLAttachementTicket
+        fields = ('id', 'attachement', 'valide', 'tdc')
+        
+    def get_tdc(self, obj):
+        tdc : TicketDeCaisse = TicketDeCaisse.objects.filter(attachement=obj.attachement).last()
+        if not tdc:
+            return None
+        return TicketDeCaisseHeaderSerializer(tdc).data

@@ -66,14 +66,12 @@ REST_FRAMEWORK = {
     # or allow read-only access for unauthenticated users.
     'PAGE_SIZE': None,
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny'
-    ],
     'DEFAULT_PARSER_CLASSES': [
         'rest_framework.parsers.FileUploadParser'
     ],
     "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework_api_key.permissions.HasAPIKey",
+        ## "rest_framework_api_key.permissions.HasAPIKey",
+        'rest_framework.permissions.AllowAny'
     ]
 }
 

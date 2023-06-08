@@ -9,6 +9,7 @@ from django.db.models import Model
 from django.db.models import TextChoices
 from django.db.models import CASCADE
 from django.db.models import SET_NULL
+from django.db.models import JSONField
 from django.db.models import CharField
 from django.db.models import TextField
 from django.db.models import FloatField
@@ -17,6 +18,7 @@ from django.db.models import ForeignKey
 from django.db.models import IntegerField
 from django.db.models import BooleanField
 from django.db.models import DateTimeField
+from django.db.models import OneToOneField
 from rest_framework_api_key.models import APIKey
 from rest_framework_api_key.models import AbstractAPIKey
 
@@ -221,6 +223,7 @@ class Factures(Model):
     def __str__(self):
         return f"Factures(api_key={self.api_key}, {self.datas=})"
     
+
 class ItemArticleToGS1(Model):
     shop = ForeignKey(TicketDeCaisseShopEnum, on_delete=SET_NULL, null=True)
     enseigne = ForeignKey(ShopEnseigne, on_delete=SET_NULL, null=True)
@@ -232,3 +235,16 @@ class ItemArticleToGS1(Model):
     
     class Meta:
         ordering = ["id"]
+
+
+class MLAttachementTicket(Model):
+    attachement = OneToOneField(AttachementImageTicket, on_delete=CASCADE, null=False)
+    json_datas = JSONField(null=False)
+    gcp_datas = JSONField(null=False)
+    valide = BooleanField(null=False, default=False)
+    
+    def __str__(self):
+        return f"MLAttachementTicket(id={self.id}, valide={self.valide}, attachement={self.attachement}, json_datas={len(self.json_datas) > 2}, gcp_datas={len(self.gcp_datas) > 2})"
+    
+    class Meta:
+        ordering= ['id', 'valide', 'attachement']

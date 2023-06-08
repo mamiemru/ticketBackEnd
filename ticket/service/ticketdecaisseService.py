@@ -55,11 +55,7 @@ class TicketDeCaisseService:
             if 'id' in in_request_tdc_attachement:
                 return AttachementImageTicket.objects.get(id=in_request_tdc_attachement['id'])
             else:
-                attachement = AttachementImageTicket.objects.filter(**in_request_tdc_attachement).first()
-                if not attachement:
-                    attachement = AttachementImageTicket(**in_request_tdc_attachement)
-                    attachement.save()
-                return attachement
+                return AttachementImageTicket.objects.filter(**in_request_tdc_attachement).first()
         return None
     
     @staticmethod

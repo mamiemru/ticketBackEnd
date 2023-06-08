@@ -4,8 +4,9 @@ from rest_framework import viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.mixins import ListModelMixin
-from rest_framework.mixins import RetrieveModelMixin
 from rest_framework.mixins import UpdateModelMixin
+from rest_framework.mixins import DestroyModelMixin
+from rest_framework.mixins import RetrieveModelMixin
 from rest_framework.parsers import MultiPartParser
 from rest_framework.parsers import FormParser
 from rest_framework.parsers import JSONParser
@@ -283,3 +284,17 @@ class TicketML(viewsets.ModelViewSet):
         raw_api_key = get_raw_api_key(request=request)
         data, status = MLService.create(api_key=api_key, datas=request.data, raw_api_key=raw_api_key)
         return Response(data=data, status=status)
+
+class MlAttachementTicketViewSet(ListModelMixin, RetrieveModelMixin, UpdateModelMixin, DestroyModelMixin, viewsets.GenericViewSet):
+    pagination_class = StandardResultsSetPagination
+    ## permission_classes = [HasAPIKey]
+    parser_classes = [JSONParser, FormParser]
+    queryset = MLAttachementTicket.objects.all()
+    
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return MlAttachementTicketHeaderSerializer
+        return MlAttachementTicketSerializer
+    
+    def create(self, request, format=None):
+        return Response(data=None, status=status.HTTP_405_METHOD_NOT_ALLOWED)

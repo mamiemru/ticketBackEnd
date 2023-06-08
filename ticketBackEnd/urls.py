@@ -61,4 +61,6 @@ urlpatterns = [
     path('attachements/<str:category>/<str:filename>/', Attachements.as_view({ 'get': 'retrieve' })),
     path('attachements/', Attachements.as_view({ 'post': 'create' })),
     path('detection/', TicketML.as_view({ 'post': 'create' })),
+    path('ml/attachement/ticket/', MlAttachementTicketViewSet.as_view({'get': 'list'})),
+    path('ml/attachement/ticket/<str:pk>/', MlAttachementTicketViewSet.as_view({'get': 'retrieve', 'delete': 'destroy', 'put': 'update'})),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
