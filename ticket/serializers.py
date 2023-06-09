@@ -153,3 +153,4 @@ class MlAttachementTicketHeaderSerializer(serializers.ModelSerializer):
         if not tdc:
             return None
         return TicketDeCaisseHeaderSerializer(tdc).data
+

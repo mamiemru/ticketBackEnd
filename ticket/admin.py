@@ -17,3 +17,7 @@ admin.site.register(AttachementImageArticle)
 admin.site.register(ItemArticleToGS1)
 admin.site.register(ShopEnseigne)
 admin.site.register(MLAttachementTicket)
+
+
+## Exo3
+admin.site.register(Profil)

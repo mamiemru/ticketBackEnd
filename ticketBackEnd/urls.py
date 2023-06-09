@@ -63,4 +63,9 @@ urlpatterns = [
     path('detection/', TicketML.as_view({ 'post': 'create' })),
     path('ml/attachement/ticket/', MlAttachementTicketViewSet.as_view({'get': 'list'})),
     path('ml/attachement/ticket/<str:pk>/', MlAttachementTicketViewSet.as_view({'get': 'retrieve', 'delete': 'destroy', 'put': 'update'})),
+    
+    path('exo3/profil', ProfilViewSet.as_view({'get': 'list', 'post': 'create'})),
+    path('exo3/profil/<str:pk>', ProfilViewSet.as_view({'get': 'retrieve', 'delete': 'destroy', 'put': 'update'})),
+    
+    
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

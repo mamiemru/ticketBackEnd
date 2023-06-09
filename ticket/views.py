@@ -298,3 +298,4 @@ class MlAttachementTicketViewSet(ListModelMixin, RetrieveModelMixin, UpdateModel
     
     def create(self, request, format=None):
         return Response(data=None, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+

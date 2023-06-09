@@ -247,4 +247,4 @@ class MLAttachementTicket(Model):
         return f"MLAttachementTicket(id={self.id}, valide={self.valide}, attachement={self.attachement}, json_datas={len(self.json_datas) > 2}, gcp_datas={len(self.gcp_datas) > 2})"
     
     class Meta:
-        ordering= ['id', 'valide', 'attachement']
+        ordering = ['id', 'valide', 'attachement']
